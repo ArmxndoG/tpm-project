@@ -1,0 +1,70 @@
+<style>
+    /* Header general */
+    header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 1000;
+        background-color: white;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transform: translateY(0); /* Posición inicial del header */
+        transition: transform 0.3s ease-in-out; /* Animación suave */
+    }
+
+    /* Barra de color */
+    .color-bar img {
+        width: 100%;
+        height: auto;
+    }
+
+    /* Contenido del header */
+    .header-content {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 10px 20px;
+    }
+
+    .logo img {
+        max-width: 150px;
+        height: auto;
+    }
+
+    /* Ajustes responsivos */
+    @media (max-width: 768px) {
+        .header-content {
+            justify-content: center;
+        }
+        .logo img {
+            max-width: 100px;
+        }
+    }
+
+    /* Body */
+    body {
+        margin: 0;
+        margin-top: 50px;
+        padding: 100px;
+        padding-top: calc(50px + 25px); /* Espacio para el header */
+        font-family: Arial, sans-serif;
+    }
+</style>
+
+<head>
+    <link rel="icon" href="/icons/favicon.ico" type="image/x-icon">
+</head>
+<header>
+    <div class="color-bar">
+        <img src="/images/barra.png" alt="Color Bar">
+    </div>
+    <nav class="header-content">
+        <div class="logo">
+            <a href="/"><img src="/images/Bosch_logo.png" alt="Logo"></a>
+        </div>
+    </nav>
+</header>
+
+

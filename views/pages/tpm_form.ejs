@@ -1,0 +1,297 @@
+<%- include('../layouts/header') %> <!-- Incluye el header -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realizar TPM</title>
+    <style>
+
+        body {
+          
+          padding-top: calc(50px + 25px); /* Altura de la barra + contenido del header */
+          background-color: #F2F2F2;
+          
+        }
+        .container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+    
+        .form-wrapper {
+          background-color: white;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          border-radius: 0.5rem;
+          padding: 1.5rem;
+          width: 100%;
+          max-width: 24rem;
+        }
+    
+        .form-wrapper h2 {
+          font-size: 1.5rem;
+          font-weight: bold;
+          margin-bottom: 1.5rem;
+        }
+    
+        .form-group {
+          margin-bottom: 1rem;
+        }
+    
+        .form-group label {
+          display: block;
+          font-weight: medium;
+          margin-bottom: 0.5rem;
+        }
+    
+        .form-group input,
+        .form-group select {
+          width: 100%;
+          padding: 0.5rem 0.75rem;
+          border: 1px solid #d2d6dc;
+          border-radius: 0.375rem;
+          outline: none;
+        }
+    
+        .form-group input:focus,
+        .form-group select:focus {
+          border-color: #3b82f6;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+        }
+    
+        .buttons {
+          display: flex;
+          justify-content: space-between;
+        }
+    
+        .buttons button {
+          background-color: #0079bf;
+          color: white;
+          padding: 0.5rem 1rem;
+          border: none;
+          cursor: pointer;
+          transition: background-color 0.3s ease;
+        }
+    
+        .buttons button:hover {
+          background-color: #004875;
+        }
+    
+        .buttons button.secondary {
+          background-color: #ffffff;
+          color: #0079bf;
+          border: 1px solid #0079bf;
+        }
+    
+        .buttons button.secondary:hover {
+          background-color: #d1e4ff;
+        }
+    
+        .buttons button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+    
+        .indicator {
+          display: flex;
+          justify-content: center;
+          margin-top: 1rem;
+        }
+    
+        .indicator div {
+          width: 1rem;
+          height: 1rem;
+          background-color: #d1d5db;
+          border-radius: 50%;
+          margin: 0 0.5rem;
+        }
+    
+        .indicator div.active {
+          background-color: #00B0F0;
+        }
+        .hidden {
+          display: none;
+        }
+      </style>
+</head>
+<body>
+    <div class="container">
+      <div class="form-wrapper">
+        <h2>Realizar TPM</h2>
+  
+        <div id="form-container">
+          <!-- First Form -->
+          <div id="first-form" class="space-y-4">
+            <div class="form-group">
+              <label for="cuarto-selection">Seleccione cuarto</label>
+              <select id="cuarto-selection">
+                
+                <% if (rooms && rooms.length > 0) { %>
+                  <% rooms.forEach(room => { %>
+                    <option value="<%= room.id_cuarto %>"><%= room.nombre_cuarto %></option>
+                  <% }); %>
+                <% } else { %>
+                  <option value="">No hay cuartos disponibles</option>
+                <% } %>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="equipo-selection">Seleccione equipo</label>
+              <select id="equipo-selection">
+                
+              </select>
+            </div>
+            <div class="buttons">
+              <button id="prevBtn" class="secondary" disabled>Anterior</button>
+              <button id="nextBtn">Siguiente</button>
+            </div>
+          </div>
+  
+          <!-- Second Form -->
+          <div id="second-form" class="space-y-4 hidden">
+            <div class="form-group">
+              <label for="username">Nombre de usuario</label>
+              <input type="text" id="username" value="ghh1slp">
+            </div>
+            <div class="form-group">
+              <label for="nombre">Nombre</label>
+              <input type="text" id="nombre" value="Hugo Armando">
+            </div>
+            <div class="form-group">
+              <label for="apellido">Apellido</label>
+              <input type="text" id="apellido" value="García Hernández">
+            </div>
+            <div class="buttons">
+              <button id="prevBtn2" class="secondary">Anterior</button>
+              <button id="initTPMBtn">Iniciar TPM</button>
+            </div>
+          </div>
+        </div>
+  
+        <div class="indicator">
+          <div class="active"></div>
+          <div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script para mandar el id_cuarto, id_equipo a la ruta mapeada en el controlador 'mostrarPuntosTPM'
+     que obtiene los puntos del tpm asociados al equipo seleccionado -->
+    <script>
+          document.getElementById('initTPMBtn').addEventListener('click', (event) => {
+          event.preventDefault(); // Evitar recargar la página al hacer clic
+  
+          // Capturar los datos del formulario
+          const id_cuarto = document.getElementById('cuarto-selection').value;
+          const id_equipo = document.getElementById('equipo-selection').value;
+          const username = document.getElementById('username').value;
+          const nombre = document.getElementById('nombre').value;
+          const apellido = document.getElementById('apellido').value;
+  
+          console.log("id_cuarto: ", id_cuarto);
+          console.log("id_equipo: ", id_equipo);
+          console.log("username: ", username);
+          console.log("nombre: ", nombre, "apellido: ", apellido);
+          
+          // Validación de campos vacíos
+          if (!id_cuarto || !id_equipo || !username || !nombre || !apellido) {
+              alert('Por favor, complete todos los campos.');
+              return;
+          }
+  
+          // Redirigir al usuario a la nueva ruta con los parámetros en la URL
+          window.location.href = `/puntos/${id_cuarto}/${id_equipo}`;
+      });
+  </script>
+
+
+    <!--Script para desplegar dinamicamente los equipos dependiendo del cuarto seleccionado -->
+    <script>
+      document.addEventListener('DOMContentLoaded', async function () {//al terminar de cargar el DOM de la pagina...
+          // Obtener el primer cuarto seleccionado por defecto
+          const cuartoSelection = document.getElementById('cuarto-selection');
+          const roomId = cuartoSelection.value;
+      
+          // Reutilizar la lógica para obtener y mostrar los equipos asociados
+          await fetchAndPopulateEquipment(roomId);
+      });
+      
+      document.getElementById('cuarto-selection').addEventListener('change', async function () {//al cambiar la opción del select..
+          // Obtener el cuarto seleccionado por el usuario
+          const roomId = this.value;
+      
+          // Reutilizar la lógica para obtener y mostrar los equipos asociados
+          await fetchAndPopulateEquipment(roomId);
+      });
+      
+      async function fetchAndPopulateEquipment(roomId) {
+          // Seleccionar el elemento <select> para los equipos
+          const equipmentSelect = document.getElementById('equipo-selection');
+      
+          // Limpiar la lista desplegable de equipos antes de llenarla con nuevos datos
+          equipmentSelect.innerHTML = '';
+      
+          try {
+              // Realizar una solicitud a la ruta del servidor para obtener los equipos del cuarto seleccionado
+              const response = await fetch(`/tpm/rooms/${roomId}/equipment`);
+      
+              // Verificar si la respuesta es válida
+              if (!response.ok) throw new Error('Error al obtener los equipos');
+      
+              // Convertir la respuesta en formato JSON
+              const equipment = await response.json();
+      
+              // Si hay equipos disponibles, llenar la lista desplegable con ellos
+              if (equipment.length > 0) {
+                  equipment.forEach(item => {
+                      // Crear un nuevo elemento <option> para cada equipo
+                      const option = document.createElement('option');
+                      option.value = item.id_equipo; // Usar el ID del equipo como valor del <option>
+                      option.textContent = item.nombre_equipo; // Usar el nombre del equipo como texto visible
+                      equipmentSelect.appendChild(option); // Agregar el <option> al <select>
+                  });
+              } else {
+                  // Si no hay equipos disponibles, mostrar un mensaje en la lista desplegable
+                  const option = document.createElement('option');
+                  option.value = ''; // Sin valor asociado
+                  option.textContent = 'No hay equipos disponibles'; // Mensaje al usuario
+                  equipmentSelect.appendChild(option);
+              }
+          } catch (err) {
+              // Manejo de errores: Mostrar en consola si ocurre un problema
+              console.error('Error:', err.message);
+          }
+      }
+      </script>
+      
+    
+    <!-- Script para alternar entre los formularios first-form y second-form según el botón que se presione -->
+    <script>
+      const firstForm = document.getElementById('first-form');
+      const secondForm = document.getElementById('second-form');
+      const prevBtn = document.getElementById('prevBtn');
+      const nextBtn = document.getElementById('nextBtn');
+      const prevBtn2 = document.getElementById('prevBtn2');
+      const indicators = document.querySelectorAll('.indicator div');
+  
+      nextBtn.addEventListener('click', () => {
+        firstForm.classList.add('hidden');
+        secondForm.classList.remove('hidden');
+        prevBtn.disabled = false;
+        indicators[0].classList.remove('active');
+        indicators[1].classList.add('active');
+      });
+  
+      prevBtn2.addEventListener('click', () => {
+        firstForm.classList.remove('hidden');
+        secondForm.classList.add('hidden');
+        prevBtn.disabled = true;
+        indicators[0].classList.add('active');
+        indicators[1].classList.remove('active');
+      });
+    </script>
+
+
+  </body>
+</html>

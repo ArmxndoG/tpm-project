@@ -1,0 +1,89 @@
+<%- include('../layouts/header') %> <!-- Incluye el header -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Realizar TPM</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css">
+</head>
+<body>
+    <div class="flex justify-center items-center h-screen">
+        <div class="bg-white shadow-lg rounded-lg w-full max-w-md p-6">
+          <h2 class="text-2xl font-bold mb-6">Realizar TPM</h2>
+    
+          <div id="form-container">
+            <!-- First Form -->
+            <div id="first-form" class="space-y-4">
+              <div>
+                <label for="cuarto-selection" class="block font-medium mb-2">Seleccione cuarto</label>
+                <select id="cuarto-selection" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                  <option value="11 - TC Testing (ATF Oil)">11 - TC Testing (ATF Oil)</option>
+                </select>
+              </div>
+              <div>
+                <label for="equipo-selection" class="block font-medium mb-2">Seleccione equipo</label>
+                <select id="equipo-selection" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                  <option value="Fabiola">Fabiola</option>
+                </select>
+              </div>
+              <div class="flex justify-between">
+                <button id="prevBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed" disabled>Anterior</button>
+                <button id="nextBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded">Siguiente</button>
+              </div>
+            </div>
+    
+            <!-- Second Form -->
+            <div id="second-form" class="space-y-4 hidden">
+              <div>
+                <label for="username" class="block font-medium mb-2">Nombre de usuario</label>
+                <input type="text" id="username" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value="ghh1slp">
+              </div>
+              <div>
+                <label for="nombre" class="block font-medium mb-2">Nombre</label>
+                <input type="text" id="nombre" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value="Hugo Armando">
+              </div>
+              <div>
+                <label for="apellido" class="block font-medium mb-2">Apellido</label>
+                <input type="text" id="apellido" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-blue-500 focus:border-blue-500" value="García Hernández">
+              </div>
+              <div class="flex justify-between">
+                <button id="prevBtn2" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium py-2 px-4 rounded">Anterior</button>
+                <button id="initTPMBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded">Iniciar TPM</button>
+              </div>
+            </div>
+          </div>
+    
+          <div class="mt-4 flex justify-center">
+            <div class="w-4 h-4 bg-gray-300 rounded-full mr-2 active"></div>
+            <div class="w-4 h-4 bg-gray-300 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+      <script>
+        const firstForm = document.getElementById('first-form');
+        const secondForm = document.getElementById('second-form');
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const prevBtn2 = document.getElementById('prevBtn2');
+        const indicators = document.querySelectorAll('.w-4.h-4');
+    
+        nextBtn.addEventListener('click', () => {
+          firstForm.classList.add('hidden');
+          secondForm.classList.remove('hidden');
+          prevBtn.disabled = false;
+          indicators[0].classList.remove('active');
+          indicators[1].classList.add('active');
+        });
+    
+        prevBtn2.addEventListener('click', () => {
+          firstForm.classList.remove('hidden');
+          secondForm.classList.add('hidden');
+          prevBtn.disabled = true;
+          indicators[0].classList.add('active');
+          indicators[1].classList.remove('active');
+        });
+      </script>
+    
+</body>
+</html>
