@@ -3,10 +3,13 @@ const { mostrarPuntosTPM, subirDatosTPM } = require('../controllers/formulariotp
 
 
 const router = express.Router();
+const upload = require('../multer-config')
 
-// Ruta para procesar el formulario
+// endpoint que obtiene los puntos asociados a un equipo
 router.get('/:id_cuarto/:id_equipo', mostrarPuntosTPM);
 
-router.post('/tpm-upload', subirDatosTPM);
+//enpoint que sube el resultado de cada punto con su respectiva imagen y comentario si es necesario
+router.post('/tpm-upload', upload.array('imagenes'), subirDatosTPM);
+
 
 module.exports = router;

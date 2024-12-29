@@ -2,6 +2,7 @@ const express = require("express");
 const session = require('express-session');
 const path = require("path");
 const bodyParser = require('body-parser');
+const cors = require('cors');
 
 const rooms_route = require("./routes/rooms_route");
 const puntostpm_route = require("./routes/formulariotpm_route");
@@ -12,6 +13,7 @@ const PORT = 3000;
 
 // Servir archivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
+
 
 //app.use('/uploads', express.static(path.join(__dirname, 'public')));
 // Configuración de sesión
@@ -32,6 +34,7 @@ app.use(bodyParser.urlencoded({ extended: true })); // Para formularios codifica
 
 // Ruta para "/"
 app.get("/", (req, res) => {
+   
     res.render("../views/pages/home"); // Renderiza la vista "home.ejs"
 });
 

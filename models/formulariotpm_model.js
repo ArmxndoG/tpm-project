@@ -93,6 +93,16 @@ const FormularioTPM = {
         }
     },
 
+    insertarOPL: async (idDetalleTPM, comentario, fotografia) => {
+      const status = 'pendiente';
+      const query = `
+          INSERT INTO opl (id_detalle_tpm, comentario, fotografia, status)
+          VALUES (?, ?, ?)
+      `;
+      const [result] = await db.query(query, [idDetalleTPM, comentario, fotografia, status]);
+      return result;
+  },
+
     
       
 };
