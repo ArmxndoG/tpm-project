@@ -9,7 +9,7 @@ const upload = require('../multer-config')
 router.get('/:id_cuarto/:id_equipo', mostrarPuntosTPM);
 
 //enpoint que sube el resultado de cada punto con su respectiva imagen y comentario si es necesario
-router.post('/tpm-upload', upload.array('imagenes'), subirDatosTPM);
+router.post('/tpm-upload', upload.any(), subirDatosTPM);
 
 
 module.exports = router;

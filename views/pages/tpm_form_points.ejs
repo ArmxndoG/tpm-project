@@ -93,7 +93,7 @@
       const nextPunto = document.getElementById('next-punto');
       
 
-      // Listeners para radios de estado
+      // Listeners para radios de estados
       const estadoRadios = document.getElementsByName('estado');
       estadoRadios.forEach(radio => {
         radio.addEventListener('change', () => {
@@ -104,6 +104,7 @@
       // Función para actualizar el punto
       function actualizarPunto() {
         const punto = puntos[puntoIndex];
+        console.log("Punto actual: ",punto); // Agrega esta línea para imprimir el contenido del punto
         imagenIndex = 0;
         actualizarImagen();
 

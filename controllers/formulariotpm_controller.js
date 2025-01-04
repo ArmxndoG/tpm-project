@@ -13,7 +13,7 @@ const mostrarPuntosTPM = async (req, res) => {
         console.log("Puntos asociados desde el controlador: ", puntos, id_tpm);
         
         // Renderizar los datos en la vista
-        res.render('pages/tpm_form_points', { puntos, id_cuarto,id_equipo, id_tpm});
+        res.render('pages/puntostpm_test', { puntos, id_cuarto,id_equipo, id_tpm});
     } catch (error) {
         console.error('Error al obtener los puntos:', error);
         res.status(500).send('Error interno del servidor.');
@@ -21,6 +21,83 @@ const mostrarPuntosTPM = async (req, res) => {
 };
 
 const subirDatosTPM = async (req, res) => {
+    console.log('Cuerpo de la solicitud:', req.body);
+  
+    try {
+      const puntos = req.body.puntos; // Usar directamente el arreglo de puntos del cuerpo de la solicitud
+  
+      console.log('Datos procesados:', puntos);
+  
+      for (const punto of puntos) {
+        const { id_tpm, id_punto, estado, comentario } = punto;
+  
+        // Insertar datos en detalle_tpm
+        const resultadoDetalle = await puntostpmModel.insertarDetalleTPM(id_tpm, id_punto, estado);
+        const idDetalleTPM = resultadoDetalle.insertId;
+  
+        // Procesar imágenes
+        if (estado === 'nok') {
+          const archivosRelacionados = req.files.filter(file =>
+            file.fieldname === `imagenes_${id_punto}[]`
+          );
+  
+          for (const archivo of archivosRelacionados) {
+            await puntostpmModel.insertarOPL(idDetalleTPM, comentario, archivo.filename);
+          }
+        }
+      }
+  
+      res.status(200).json({ message: 'Datos procesados correctamente' });
+    } catch (error) {
+      console.error('Error al procesar los datos:', error);
+      res.status(500).json({ error: 'Ocurrió un error general al procesar los datos' });
+    }
+  };
+/*const subirDatosTPM = async (req, res) => {
+    console.log('Cuerpo de la solicitud:', req.body);
+  try {
+    const puntos = Object.keys(req.body)
+      .filter(key => key.startsWith('puntos'))
+      .reduce((acc, key) => {
+        const match = key.match(/^puntos\[(\d+)\]\[(.+)\]$/);
+        if (match) {
+          const index = parseInt(match[1], 10);
+          const field = match[2];
+          acc[index] = acc[index] || {};
+          acc[index][field] = req.body[key];
+        }
+        return acc;
+      }, []);
+
+    console.log('Datos procesados:', puntos);
+
+    for (const punto of puntos) {
+      const { id_tpm, id_punto, estado, comentario } = punto;
+
+      // Insertar datos en detalle_tpm
+      const resultadoDetalle = await puntostpmModel.insertarDetalleTPM(id_tpm, id_punto, estado);
+      const idDetalleTPM = resultadoDetalle.insertId;
+
+      // Procesar imágenes
+      if (estado === 'nok') {
+        const archivosRelacionados = req.files.filter(file =>
+          file.fieldname === `imagenes_${id_punto}[]`
+        );
+
+        for (const archivo of archivosRelacionados) {
+          await puntostpmModel.insertarOPL(idDetalleTPM, comentario, archivo.filename);
+        }
+      }
+    }
+
+    res.status(200).json({ message: 'Datos procesados correctamente' });
+  } catch (error) {
+    console.error('Error al procesar los datos:', error);
+    res.status(500).json({ error: 'Ocurrió un error general al procesar los datos' });
+  }
+};*/
+
+/*const subirDatosTPM = async (req, res) => {
     try {
         console.log("Archivos recibidos:", req.files);
 
@@ -80,7 +157,7 @@ const subirDatosTPM = async (req, res) => {
         console.error('Error general al procesar los datos:', error);
         res.status(500).json({ error: 'Ocurrió un error general al procesar los datos' });
     }
-};
+};*/
 
 
 /*const subirDatosTPM = async (req, res) => {

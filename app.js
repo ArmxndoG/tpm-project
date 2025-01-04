@@ -24,13 +24,15 @@ app.use(session({
     cookie: { secure: false } // Asegúrate de usar true solo con HTTPS
 }));
 
+// Middleware para procesar JSON y URL-encoded
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 // Configurar EJS como motor de plantillas
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views")); // Directorio donde se guardarán las vistas
 //app.use(express.static(path.join(__dirname, "public")));
-app.use(bodyParser.json()); // Para analizar datos JSON enviados en POST
-app.use(bodyParser.urlencoded({ extended: true })); // Para formularios codificados en URL
+
 
 // Ruta para "/"
 app.get("/", (req, res) => {
