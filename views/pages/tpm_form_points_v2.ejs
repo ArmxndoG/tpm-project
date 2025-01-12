@@ -5,58 +5,76 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TPM</title>
+  <link rel="stylesheet" href="/css/tpm_form_points.css"/>
 </head>
 <body>
   <h2>ID CUARTO: <%= id_cuarto %></h2>
   <h2>ID EQUIPO: <%= id_equipo %></h2>
   <h2 id="id-tpm">ID TPM: <%= id_tpm %></h2>
 
-  <div id="contenedor-puntos" style="display: flex; flex-direction: column; gap: 20px;">
-    <!-- Renderizado dinamico de los puntos asociados al equipo seleccionado -->
+  <div id="contenedor-puntos">
+    <!--Recorrer cada punto -->
     <% puntos.forEach((punto, index) => { %>
-    <div class="punto-contenedor" data-index="<%= index %>" style="border: 1px solid #ccc; padding: 20px; border-radius: 10px;">
-      <h3>Orden: <%= punto.orden %></h3>
-      <p>Categoría: <%= punto.nombre_categoria %></p>
-      <p>Actividad: <%= punto.actividad %></p>
-      <p>Tiempo: <%= punto.tiempo %></p>
-      <p>Procedimiento: <%= punto.procedimiento %></p>
-      <p>Herramienta/Material: <%= punto.herramienta_material %></p>
-      <p>Responsable: <%= punto.responsable %></p>
-  
-      <!-- Radio buttons para el Estado OK/NOK con nombre unico-->
-      <div>
-        <label>
-          <input type="radio" name="estado-<%= index %>" value="ok"> OK
-        </label>
-        <label>
-          <input type="radio" name="estado-<%= index %>" value="nok"> NOK
-        </label>
+    <div class="contenedor-punto" data-index="<%= index %>">
+      <!-- Contenedor izquierdo: Información del punto -->
+      <div class="contenedor-punto-info">
+        <h3>Orden: <%= punto.orden %></h3>
+        <p>Categoría: <%= punto.nombre_categoria %></p>
+        <p>Actividad: <%= punto.actividad %></p>
+        <p>Tiempo: <%= punto.tiempo %></p>
+        <p>Procedimiento: <%= punto.procedimiento %></p>
+        <p>Herramienta/Material: <%= punto.herramienta_material %></p>
+        <p>Responsable: <%= punto.responsable %></p>
+    
+        <!-- Radio buttons para el Estado OK/NOK con nombre único -->
+        <div>
+          <label>
+            <input type="radio" name="estado-<%= index %>" value="ok"> OK
+          </label>
+          <label>
+            <input type="radio" name="estado-<%= index %>" value="nok"> NOK
+          </label>
+        </div>
+    
+        <!-- Input de imagen y comentario para el estado NOK -->
+        <div class="nok-contenido">
+          <label for="comentario-<%= index %>">Comentario:</label>
+          <textarea required id="comentario-<%= index %>" rows="3" style="width: 100%;"></textarea>
+          <label for="imagenes-<%= index %>">Subir imágenes:</label>
+          <input type="file" id="imagenes-<%= index %>" name="imagenes" multiple style="width: 100%;" required accept=".png, .jpg, .jpeg">
+          <!-- Contenedor de vistas previas -->
+          <div id="preview-container-<%= index %>" class="preview-container" style="display: flex; gap: 10px; margin-top: 10px;"></div>
+        </div>
       </div>
-  
-      <!-- Input de imagen y comentario para el estado NOK-->
-      <div class="nok-contenido" style="display: none; margin-top: 20px;">
-        <label for="comentario-<%= index %>">Comentario:</label>
-        <textarea id="comentario-<%= index %>" rows="3" style="width: 100%;" required></textarea>
-        <label for="imagenes-<%= index %>">Subir imágenes:</label>
-        <input type="file" id="imagenes-<%= index %>" name="imagenes" multiple style="width: 100%;" required>
-        <div id="preview-<%= index %>" class="image-preview" style="margin-top: 10px;"></div> <!--Previsualización de las imagenes seleccionadas -->
+      
+      <!-- Contenedor derecho: Imágenes de ayuda visual -->
+      <div class='contenedor-ayudavisual'>
+        <div class="ayuda-visual">
+          <!-- Botón anterior -->
+          <button class="av_flecha_izquierda">&#9664;</button>
+          
+          <!-- Imagen activa -->
+          <img src="/uploads/<%= punto.ayuda_visual[0] %>" alt="Ayuda Visual" style="width: 100%; height: 100%; object-fit: cover;" data-index="0">
+          
+          <!-- Botón siguiente -->
+          <button class="av_flecha_derecha">&#9654;</button>
+        </div>
+        <p style="margin-top: 10px;">Ayuda Visual <span class="imagen-actual">1</span> de <%= punto.ayuda_visual.length %></p>
       </div>
     </div>
     <% }) %>
-  </div>
-  <!--Botón para enviar los estados de los puntos y su imagen/comentario en caso de ser 'nok' al servidor -->
-  <button id="guardar-estados" type="submit" style="padding: 10px 20px; margin-top: 20px;">Guardar Estados</button>
+</div>
+  <!--Botón para enviar los estados de los puntos al servidor -->
+  <button id="guardar-estados" type="submit">Guardar Estados</button>
 
   <script>
     
     document.addEventListener('DOMContentLoaded', () => {//Ejecuta el script cuando el DOM esté completamente cargado...
 
-        const guardarEstados = document.getElementById('guardar-estados');//Botón para enviar los estados de los puntos.
-        const inputFile = document.getElementById("imagenes-<%= index %>");
-        const previewContainer = document.getElementById("preview-<%= index %>");
-
-        //Inicializa los puntos desde una variable de servidor y les añade propiedades adicionales
-        //eg: [{id_pxe: 9, id_punto: 1, id_equipo: 1, nombre_categoria: 'Seguridad', actividad: 'Revisar correas', …}]
+        const guardarEstados = document.getElementById('guardar-estados');//id del botón 'guardar-estados'.
+    
+        //Parsea los puntos y los estructura con propiedades adicionales
+        //eg: [{id_pxe: 9, id_punto: 1, id_equipo: 1, nombre_categoria: 'Seguridad', actividad: 'Revisar correas', estado: 'nok', comentario: 'test'…}]
         const puntos = JSON.parse('<%- JSON.stringify(puntos) %>').map(p => ({
             ...p,
             estado: null, 
@@ -72,7 +90,7 @@
         */
         function manejarCambioRadio(event) {
             // Encontrar el contenedor más cercano con la clase 'punto-contenedor'
-            const container = event.target.closest('.punto-contenedor');
+            const container = event.target.closest('.contenedor-punto');
             // Seleccionar el contenido 'nok' dentro del contenedor
             const nokContenido = container.querySelector('.nok-contenido');
             // Mostrar u ocultar el contenido 'nok' basado en el valor del radio button
@@ -93,40 +111,63 @@
         * Recopila los datos de los puntos, crea un FormData y los envía al servidor.
         */
         guardarEstados.addEventListener('click', async (event) => {
-
             event.preventDefault();
-            // Crea un nuevo objeto FormData para enviar los datos del formulario
+
+            // Verificar si todos los puntos tienen un estado seleccionado
+            let todosSeleccionados = true;
+            let comentarioEscrito = true;
+
+            puntos.forEach((punto, index) => {
+                const container = document.querySelector(`.contenedor-punto[data-index="${index}"]`);
+                const estadoSeleccionado = container.querySelector(`[name="estado-${index}"]:checked`);
+                
+                if (!estadoSeleccionado) {
+                    todosSeleccionados = false;
+                    // Resaltar el contenedor del punto que no tiene un estado seleccionado
+                    container.style.borderColor = 'red';
+                } else {
+                    // Restaurar el borde si ya se seleccionó un estado
+                    container.style.borderColor = '#ccc';
+                }
+            });
+
+            if (!todosSeleccionados) {
+                alert('Por favor, selecciona un estado (OK o NOK) para todos los puntos antes de continuar.');
+                return; // Detener el proceso si no se cumplen las condiciones
+            }
+
+            // Continuar con el envío si todos los estados están seleccionados
             const formData = new FormData();
 
-            // Recorrer cada punto y añadir los datos al formData
             puntos.forEach((punto, index) => {
-
-                // Seleccionar el contenedor del punto actual basado en el índice
-                const container = document.querySelector(`.punto-contenedor[data-index="${index}"]`);
-                // Obtiene el estado seleccionado 
+                const container = document.querySelector(`.contenedor-punto[data-index="${index}"]`);
                 const estadoSeleccionado = container.querySelector(`[name="estado-${index}"]:checked`)?.value;
-                // Asignar el estado seleccionado al objeto punto
                 punto.estado = estadoSeleccionado || null;
 
-                // Agrega los datos básicos del punto al FormData
                 formData.append(`puntos[${index}][id_tpm]`, '<%= id_tpm %>');
                 formData.append(`puntos[${index}][id_punto]`, punto.id_punto);
                 formData.append(`puntos[${index}][estado]`, estadoSeleccionado || "");
 
-                // Si el estado seleccionado es 'nok', añadir el comentario y las imágenes
                 if (estadoSeleccionado === 'nok') { 
                     punto.comentario = container.querySelector(`#comentario-${index}`).value;
+                    console.log("comentario: ",punto.comentario);
                     formData.append(`puntos[${index}][comentario]`, punto.comentario);
 
+                    if(punto.comentario == ''){//si el comentairo del punto marcado como 'nok' esta vacío activar la bandera
+                        comentarioEscrito = false;
+                    }
+
                     const imagenesInput = container.querySelector(`#imagenes-${index}`);
-                    //Añadir cada imagen seleccionada al objeto formData
                     Array.from(imagenesInput.files).forEach((file, fileIndex) => {
                         formData.append(`imagenes_${punto.id_punto}[]`, file);
                     });
                 }
             });
-            
-            //Manda los datos del formData al servidor mediante una petición POST
+            if(!comentarioEscrito){//si hubo algún comentario vacío mandar una alerta y salir del evento para no publicar datos.
+                alert("Por favor escriba comentario en el punto marcado como NOK");
+                return;
+            }
+
             try {
                 const response = await fetch('/puntos/tpm-upload', {
                     method: 'POST',
@@ -147,45 +188,96 @@
             }
         });
 
-        /* 
-        Previsualización de las imagenes seleccionadas
-        */
-        inputFile.addEventListener("change", function () {
-            // Limpiar el contenedor de previsualización
-            previewContainer.innerHTML = "";
+        //Seleccionar todos los contenedores de los puntos y recorrerlos uno por uno...
+        document.querySelectorAll('.contenedor-punto').forEach((contenedor, index) => {
+            
+            const imagenElement = contenedor.querySelector('.ayuda-visual img');//obiene el elemento de imagen del contenedor
+            const imagenes = puntos[index].ayuda_visual;//lista de imagenes asociadas al punto
+            const totalImagenes = imagenes.length;//total de imagenes asociadas
+            const imagenActualElement = contenedor.querySelector('.imagen-actual'); //elemento de imagen actual
+            let imagenActual = 0;
 
-            // Obtener los archivos seleccionados
-            const files = inputFile.files;
+            const actualizarImagen = () => {
+                imagenElement.src = `/uploads/${imagenes[imagenActual]}`;//ruta relativa
+                imagenActualElement.textContent = imagenActual + 1;//Actualiza el texto del indice de la imagen actual
+            };
 
-            // Verificar que se hayan seleccionado archivos
-            if (files && files.length > 0) {
-            Array.from(files).forEach((file) => {
-                // Verificar que el archivo sea una imagen
-                if (file.type.startsWith("image/")) {
+            contenedor.querySelector('.av_flecha_izquierda').addEventListener('click', () => {
+                // Moverse a la imagen anterior, considerando que el índice es cíclico
+                imagenActual = (imagenActual - 1 + totalImagenes) % totalImagenes;
+                actualizarImagen();
+            });
+
+            contenedor.querySelector('.av_flecha_derecha').addEventListener('click', () => {
+                // Moverse a la imagen siguiente, considerando que el índice es cíclico
+                imagenActual = (imagenActual + 1) % totalImagenes;
+                actualizarImagen();
+            });
+        });
+
+        // Manejar la previsualización de imágenes con la opción de eliminar
+        document.querySelectorAll('input[type="file"]').forEach((fileInput, index) => {
+            fileInput.addEventListener('change', (event) => {
+            const previewContainer = document.getElementById(`preview-container-${index}`);
+            previewContainer.innerHTML = ""; // Limpiar el contenedor antes de añadir nuevas imágenes
+
+            Array.from(event.target.files).forEach((file, fileIndex) => {
                 const reader = new FileReader();
 
-                // Crear un elemento img para mostrar la previsualización
-                reader.onload = function (e) {
-                    const img = document.createElement("img");
-                    img.src = e.target.result;
-                    img.style.maxWidth = "100px";
-                    img.style.maxHeight = "100px";
-                    img.style.marginRight = "10px";
-                    previewContainer.appendChild(img);
+                reader.onload = (e) => {
+                // Crear un contenedor para la imagen y el botón de eliminar
+                const imgWrapper = document.createElement("div");
+                imgWrapper.style.position = "relative";
+                imgWrapper.style.display = "inline-block";
+
+                // Crear el elemento de la imagen
+                const img = document.createElement("img");
+                img.src = e.target.result;
+                img.alt = `Imagen ${fileIndex + 1}`;
+                img.style.width = "100px";
+                img.style.height = "100px";
+                img.style.objectFit = "cover";
+                img.style.marginRight = "10px";
+
+                // Crear el botón de eliminar
+                const removeButton = document.createElement("button");
+                removeButton.textContent = "X";
+                removeButton.style.position = "absolute";
+                removeButton.style.top = "5px";
+                removeButton.style.right = "5px";
+                removeButton.style.background = "red";
+                removeButton.style.color = "white";
+                removeButton.style.border = "none";
+                removeButton.style.borderRadius = "50%";
+                removeButton.style.cursor = "pointer";
+
+                // Evento para eliminar la imagen
+                removeButton.addEventListener("click", () => {
+                    imgWrapper.remove();
+
+                    // Eliminar la imagen del input
+                    const dt = new DataTransfer();
+                    Array.from(fileInput.files)
+                    .filter((_, i) => i !== fileIndex)
+                    .forEach((remainingFile) => dt.items.add(remainingFile));
+                    fileInput.files = dt.files;
+                });
+
+                // Añadir la imagen y el botón al contenedor
+                imgWrapper.appendChild(img);
+                imgWrapper.appendChild(removeButton);
+
+                // Añadir el contenedor al preview
+                previewContainer.appendChild(imgWrapper);
                 };
 
-                // Leer el archivo como una URL de datos
                 reader.readAsDataURL(file);
-                } else {
-                // Mostrar un mensaje de error si el archivo no es una imagen
-                const error = document.createElement("p");
-                error.textContent = `El archivo ${file.name} no es una imagen válida.`;
-                error.style.color = "red";
-                previewContainer.appendChild(error);
-                }
             });
-            }
+            });
         });
+
+
+
     });
   </script>
   

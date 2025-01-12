@@ -64,6 +64,117 @@
     height: 30px; 
     cursor: pointer;
 }
+.contenedor-principal {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+}
+
+.header-info {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.contenedor-punto {
+    display: none;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.contenedor-punto.activo {
+    display: flex;
+}
+
+.navegacion-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding: 20px 0;
+}
+.botones-derecha {
+    width: 100px; /* Mismo ancho que definimos en .btn-nav */
+}
+
+.botones-navegacion {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-nav {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: #0088cc;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    min-width: 100px;
+}
+
+.btn-nav:hover {
+    background-color: #006699;
+}
+
+.btn-nav:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.indicadores-progreso {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin: 0 20px;
+}
+
+.indicador {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #ddd;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.indicador.activo {
+    width: 16px;
+    height: 16px;
+    background-color: #0088cc;
+    transform: translateY(-2px);
+}
+
+.punto-info {
+    background-color: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.estado-selector {
+    display: flex;
+    gap: 20px;
+    margin: 15px 0;
+}
+
+.estado-selector label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.radio-custom {
+    width: 20px;
+    height: 20px;
+}
+#guardar-estados {
+    display: none;
+}
 
 
 
