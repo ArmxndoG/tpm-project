@@ -1,0 +1,194 @@
+<%- include('../layouts/header') %> <!-- Incluye el header -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TPM</title>
+</head>
+<body>
+  <h2>ID CUARTO: <%= id_cuarto %></h2>
+  <h2>ID EQUIPO: <%= id_equipo %></h2>
+  <h2 id="id-tpm">ID TPM: <%= id_tpm %></h2>
+
+  <div id="contenedor-puntos" style="display: flex; flex-direction: column; gap: 20px;">
+    <!-- Renderizado dinamico de los puntos asociados al equipo seleccionado -->
+    <% puntos.forEach((punto, index) => { %>
+    <div class="punto-contenedor" data-index="<%= index %>" style="border: 1px solid #ccc; padding: 20px; border-radius: 10px;">
+      <h3>Orden: <%= punto.orden %></h3>
+      <p>Categoría: <%= punto.nombre_categoria %></p>
+      <p>Actividad: <%= punto.actividad %></p>
+      <p>Tiempo: <%= punto.tiempo %></p>
+      <p>Procedimiento: <%= punto.procedimiento %></p>
+      <p>Herramienta/Material: <%= punto.herramienta_material %></p>
+      <p>Responsable: <%= punto.responsable %></p>
+  
+      <!-- Radio buttons para el Estado OK/NOK con nombre unico-->
+      <div>
+        <label>
+          <input type="radio" name="estado-<%= index %>" value="ok"> OK
+        </label>
+        <label>
+          <input type="radio" name="estado-<%= index %>" value="nok"> NOK
+        </label>
+      </div>
+  
+      <!-- Input de imagen y comentario para el estado NOK-->
+      <div class="nok-contenido" style="display: none; margin-top: 20px;">
+        <label for="comentario-<%= index %>">Comentario:</label>
+        <textarea id="comentario-<%= index %>" rows="3" style="width: 100%;" required></textarea>
+        <label for="imagenes-<%= index %>">Subir imágenes:</label>
+        <input type="file" id="imagenes-<%= index %>" name="imagenes" multiple style="width: 100%;" required>
+        <div id="preview-<%= index %>" class="image-preview" style="margin-top: 10px;"></div> <!--Previsualización de las imagenes seleccionadas -->
+      </div>
+    </div>
+    <% }) %>
+  </div>
+  <!--Botón para enviar los estados de los puntos y su imagen/comentario en caso de ser 'nok' al servidor -->
+  <button id="guardar-estados" type="submit" style="padding: 10px 20px; margin-top: 20px;">Guardar Estados</button>
+
+  <script>
+    
+    document.addEventListener('DOMContentLoaded', () => {//Ejecuta el script cuando el DOM esté completamente cargado...
+
+        const guardarEstados = document.getElementById('guardar-estados');//Botón para enviar los estados de los puntos.
+        const inputFile = document.getElementById("imagenes-<%= index %>");
+        const previewContainer = document.getElementById("preview-<%= index %>");
+
+        //Inicializa los puntos desde una variable de servidor y les añade propiedades adicionales
+        //eg: [{id_pxe: 9, id_punto: 1, id_equipo: 1, nombre_categoria: 'Seguridad', actividad: 'Revisar correas', …}]
+        const puntos = JSON.parse('<%- JSON.stringify(puntos) %>').map(p => ({
+            ...p,
+            estado: null, 
+            comentario: "", 
+            imagenes: [] 
+        }));
+        console.log("puntos: ",puntos);
+        
+        /**
+        * Función que maneja el cambio de estado en los radio buttons.
+        * Muestra el contenido adicional ('nok') solo si el estado seleccionado es 'nok'. 
+        * 
+        */
+        function manejarCambioRadio(event) {
+            // Encontrar el contenedor más cercano con la clase 'punto-contenedor'
+            const container = event.target.closest('.punto-contenedor');
+            // Seleccionar el contenido 'nok' dentro del contenedor
+            const nokContenido = container.querySelector('.nok-contenido');
+            // Mostrar u ocultar el contenido 'nok' basado en el valor del radio button
+            nokContenido.style.display = event.target.value === 'nok' ? 'block' : 'none';
+        }
+
+        //Selecciona todos los radio buttons asociados con los estados
+        const radios = document.querySelectorAll('[name^="estado-"]');
+
+        // Añadir el evento de cambio a cada radio button
+        radios.forEach(radio => {
+            radio.addEventListener('change', manejarCambioRadio);
+        });
+
+
+        /**
+        * Maneja el clic en el botón "Guardar Estados".
+        * Recopila los datos de los puntos, crea un FormData y los envía al servidor.
+        */
+        guardarEstados.addEventListener('click', async (event) => {
+
+            event.preventDefault();
+            // Crea un nuevo objeto FormData para enviar los datos del formulario
+            const formData = new FormData();
+
+            // Recorrer cada punto y añadir los datos al formData
+            puntos.forEach((punto, index) => {
+
+                // Seleccionar el contenedor del punto actual basado en el índice
+                const container = document.querySelector(`.punto-contenedor[data-index="${index}"]`);
+                // Obtiene el estado seleccionado 
+                const estadoSeleccionado = container.querySelector(`[name="estado-${index}"]:checked`)?.value;
+                // Asignar el estado seleccionado al objeto punto
+                punto.estado = estadoSeleccionado || null;
+
+                // Agrega los datos básicos del punto al FormData
+                formData.append(`puntos[${index}][id_tpm]`, '<%= id_tpm %>');
+                formData.append(`puntos[${index}][id_punto]`, punto.id_punto);
+                formData.append(`puntos[${index}][estado]`, estadoSeleccionado || "");
+
+                // Si el estado seleccionado es 'nok', añadir el comentario y las imágenes
+                if (estadoSeleccionado === 'nok') { 
+                    punto.comentario = container.querySelector(`#comentario-${index}`).value;
+                    formData.append(`puntos[${index}][comentario]`, punto.comentario);
+
+                    const imagenesInput = container.querySelector(`#imagenes-${index}`);
+                    //Añadir cada imagen seleccionada al objeto formData
+                    Array.from(imagenesInput.files).forEach((file, fileIndex) => {
+                        formData.append(`imagenes_${punto.id_punto}[]`, file);
+                    });
+                }
+            });
+            
+            //Manda los datos del formData al servidor mediante una petición POST
+            try {
+                const response = await fetch('/puntos/tpm-upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Datos enviados correctamente');
+                    console.log('Respuesta del servidor:', result);
+                } else {
+                    console.error('Error del servidor:', result);
+                    alert('Error al enviar los datos');
+                }
+            } catch (error) {
+                console.error('Error al enviar la solicitud:', error);
+                alert('Error al enviar los datos');
+            }
+        });
+
+        /* 
+        Previsualización de las imagenes seleccionadas
+        */
+        inputFile.addEventListener("change", function () {
+            // Limpiar el contenedor de previsualización
+            previewContainer.innerHTML = "";
+
+            // Obtener los archivos seleccionados
+            const files = inputFile.files;
+
+            // Verificar que se hayan seleccionado archivos
+            if (files && files.length > 0) {
+            Array.from(files).forEach((file) => {
+                // Verificar que el archivo sea una imagen
+                if (file.type.startsWith("image/")) {
+                const reader = new FileReader();
+
+                // Crear un elemento img para mostrar la previsualización
+                reader.onload = function (e) {
+                    const img = document.createElement("img");
+                    img.src = e.target.result;
+                    img.style.maxWidth = "100px";
+                    img.style.maxHeight = "100px";
+                    img.style.marginRight = "10px";
+                    previewContainer.appendChild(img);
+                };
+
+                // Leer el archivo como una URL de datos
+                reader.readAsDataURL(file);
+                } else {
+                // Mostrar un mensaje de error si el archivo no es una imagen
+                const error = document.createElement("p");
+                error.textContent = `El archivo ${file.name} no es una imagen válida.`;
+                error.style.color = "red";
+                previewContainer.appendChild(error);
+                }
+            });
+            }
+        });
+    });
+  </script>
+  
+
+</body>
+</html>

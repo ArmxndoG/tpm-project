@@ -3,7 +3,7 @@ const db = require("./db");
 
 const FormularioTPM = {
 
-    //Método para obtener los puntos del tpm asociado al equipo seleccionado agrupado por imagenes asociadas
+      //Método para obtener los puntos del tpm asociado al equipo seleccionado agrupado por imagenes asociadas
       getPuntosPorEquipo: async (id_equipo) => {
         try {
             const query = `
@@ -38,8 +38,9 @@ const FormularioTPM = {
             throw err;
           }
         },
-      
-        setDetalleTPM: async (id_equipo) => {
+
+        //Método para insertar un registro nuevo en la tabla 'tpm'
+        insertarTPM: async (id_equipo) => {
           
           try {
             const query = `
@@ -53,8 +54,8 @@ const FormularioTPM = {
               .replace('T', ' ');
 
             const values = [
-              1, // Valor por defecto para id_usuario
-              id_equipo, // Pasado desde el controlador
+              1, // Valor por defecto para id_usuario - (username del SSO en el futuro)
+              id_equipo, 
               fechaLocal,
               'pendiente', 
               'no' 
@@ -68,7 +69,7 @@ const FormularioTPM = {
             console.error('Error al insertar datos en TPM:', error);
           }
       },
-
+      //Método para insertar los estados de los puntos en la tabla 'detalle_tpm'
       insertarDetalleTPM: async (id_tpm_detalle, id_punto, status) => {
           
         try {
@@ -78,8 +79,8 @@ const FormularioTPM = {
           `;
 
           const values = [
-            id_tpm_detalle, // Valor por defecto para id_usuario
-            id_punto, // Pasado desde el controlador
+            id_tpm_detalle, 
+            id_punto, 
             status,
             
           ];
@@ -92,8 +93,9 @@ const FormularioTPM = {
           throw error; // Lanzar el error para manejarlo en el controlador
         }
     },
-
+    //Método para insertar los comentarios y las imagenes de los puntos 'nok' en la tabla 'opl'
     insertarOPL: async (idDetalleTPM, comentario, fotografia) => {
+      
       const status = 'pendiente';
       const query = `
           INSERT INTO opl (id_detalle_tpm, comentario, fotografia, status)
@@ -101,7 +103,7 @@ const FormularioTPM = {
       `;
       const [result] = await db.query(query, [idDetalleTPM, comentario, fotografia, status]);
       return result;
-  },
+    },
 
     
       
