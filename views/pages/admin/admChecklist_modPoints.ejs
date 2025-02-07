@@ -1,0 +1,179 @@
+<%- include('../../layouts/header') %> <!-- Incluye el header -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Modificación de puntos</title>
+
+    <link rel="stylesheet" href="/css/agregar_equipo.css">
+    <script src="/js/Sortable.min.js"></script> <!-- Importado desde la carpeta static -->
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        
+        #sortable-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        
+        .sortable-item {
+            background-color: white;
+            border: 1px solid #e0e0e0;
+            margin-bottom: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .order-number {
+            min-width: 30px;
+            margin-right: 15px;
+            font-weight: bold;
+            color: #666;
+        }
+        
+        .item-text {
+            flex-grow: 1;
+        }
+        
+        .item-actions {
+            display: flex;
+            gap: 15px;
+            margin-left: 15px;
+        }
+        
+        .action-icon {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+        
+        .action-icon:hover {
+            opacity: 1;
+        }
+        
+        #guardar-cambios {
+            width: 100%;
+            padding: 12px;
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        #guardar-cambios:hover {
+            background-color: #1976D2;
+        }
+        .c {
+            margin-top: 100px;
+            
+        }
+    </style>
+
+</head>
+
+<body>
+    <div class="c">
+        <h1>ChekList</h1>
+        <ul id="sortable-list">
+            <% puntos.forEach((punto) => { %>
+            <li class="sortable-item" data-id="<%= punto.id_punto %>" data-valor="<%= punto.valor %>">
+                <span class="order-number"><%= punto.orden %></span>
+                <span class="item-text"><%= punto.valor %></span>
+                <div class="item-actions">
+                    <img src="/icons/edit.svg" alt="Editar" class="action-icon edit-icon">
+                    <img src="/icons/delete.svg" alt="Eliminar" class="action-icon delete-icon">
+                </div>
+            </li>
+            <% }); %>
+        </ul>
+    </div>
+    
+    <button id="guardar-cambios">Guardar Cambios</button>
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            let puntoEliminadoId = null; // Variable para almacenar el ID del punto eliminado
+            var sortable = new Sortable(document.getElementById("sortable-list"), {
+                animation: 150,
+                onEnd: function () {
+                    actualizarOrden();
+                }
+            });
+    
+            function actualizarOrden() {
+                let elementos = document.querySelectorAll(".sortable-item");
+    
+                elementos.forEach((elemento, index) => {
+                    let nuevoOrden = index + 1;
+                    elemento.dataset.orden = nuevoOrden;
+                    
+                    // Update only the order number and maintain the original text
+                    let orderSpan = elemento.querySelector('.order-number');
+                    let textSpan = elemento.querySelector('.item-text');
+                    
+                    orderSpan.textContent = nuevoOrden;
+                    textSpan.textContent = elemento.getAttribute('data-valor');
+                });
+    
+                return Array.from(elementos).map(elemento => ({
+                    id: elemento.dataset.id,
+                    orden: elemento.dataset.orden
+                }));
+            }
+            // Función para eliminar un punto
+            function eliminarPunto(iconElement) {
+                const listItem = iconElement.closest('.sortable-item');
+                puntoEliminadoId = listItem.dataset.id; // Guardamos el ID del eliminado
+
+                if (confirm('¿Estás seguro de que deseas eliminar este punto?')) {
+                    listItem.remove(); // Eliminar del DOM
+                    actualizarOrden(); // Reordenar los restantes
+                }
+            }
+
+            // Escuchar eventos de eliminación
+            document.querySelectorAll('.delete-icon').forEach(icon => {
+                icon.addEventListener('click', function () {
+                    eliminarPunto(this);
+                });
+            });
+    
+            document.getElementById("guardar-cambios").addEventListener("click", function () {
+                let nuevoOrdenArray = actualizarOrden();
+                fetch("/tpm/admChecklist/changeOrder", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ puntos: nuevoOrdenArray, puntoEliminadoId: puntoEliminadoId  })
+                })
+                .then(response => response.json())
+                .then(data => alert(data.message))
+                .catch(error => console.error("Error:", error));
+            });
+            document.querySelectorAll(".delete-icon").forEach(icon => {
+                icon.addEventListener("click", function () {
+                    const listItem = this.closest('.sortable-item');
+                    if (confirm('¿Estás seguro de que deseas eliminar este punto?')) {
+                        listItem.remove();  // Solo lo eliminamos del frontend
+                        actualizarOrden(); // Reordenamos visualmente
+                    }
+                });
+            });
+
+        
+        });
+        </script>
+</body>
+</html>

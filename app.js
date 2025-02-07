@@ -3,9 +3,8 @@ const session = require('express-session');
 const path = require("path");
 const bodyParser = require('body-parser');
 
-const rooms_route = require("./routes/rooms_route");
-const puntostpm_route = require("./routes/formulariotpm_route");
-const imagenes_route = require('./routes/imagenes_route');
+const tpm_routes = require("./routes/tpm_routes");
+
 
 const app = express();
 const PORT = 3000;
@@ -31,19 +30,19 @@ app.use(bodyParser.json()); // Para analizar datos JSON enviados en POST
 app.use(bodyParser.urlencoded({ extended: true })); // Para formularios codificados en URL
 
 // Ruta para "/"
-app.get("/", (req, res) => {
+/*app.get("/", (req, res) => {
     res.render("../views/pages/home"); // Renderiza la vista "home.ejs"
-});
-
-// ruta raiz de rooms_route 
-app.use("/tpm", rooms_route);
-
-//ruta raiz de los puntos tpm
-app.use('/puntos', puntostpm_route);
+});*/
 
 
-// Rutas
-app.use('/api/puntos', imagenes_route);
+/*app.use('/', indexRouter);
+app.use('/users', usersRouter);
+app.use('/bespeak', authRouter);*/
+
+// ruta raiz de todo el proyecto
+app.use("/tpm", tpm_routes);
+
+
 
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);

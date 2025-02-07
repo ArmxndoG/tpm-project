@@ -1,10 +1,10 @@
-<%- include('../layouts/header') %> <!-- Incluye el header -->
+<%- include('../../layouts/header') %> <!-- Incluye el header -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Realizar TPM</title>
+    <title>Admin - Checklist</title>
     <style>
 
         body {
@@ -117,63 +117,37 @@
 </head>
 <body>
     <div class="container">
-      <div class="form-wrapper">
-        <h2>Realizar TPM</h2>
-  
-        <div id="form-container">
-          <!-- First Form -->
-          <div id="first-form" class="space-y-4">
-            <div class="form-group">
-              <label for="cuarto-selection">Seleccione cuarto</label>
-              <select id="cuarto-selection">
-                
-                <% if (rooms && rooms.length > 0) { %>
-                  <% rooms.forEach(room => { %>
-                    <option value="<%= room.id_cuarto %>"><%= room.nombre_cuarto %></option>
-                  <% }); %>
-                <% } else { %>
-                  <option value="">No hay cuartos disponibles</option>
-                <% } %>
-              </select>
+        <div class="form-wrapper">
+            <h2>Administrar checklist</h2>
+    
+            <div id="form-container">
+                <!-- First Form -->
+                <div id="first-form" class="space-y-4">
+                    <div class="form-group">
+                        <label for="cuarto-selection">Seleccione cuarto</label>
+                        <select id="cuarto-selection">
+                            
+                            <% if (rooms && rooms.length > 0) { %>
+                            <% rooms.forEach(room => { %>
+                                <option value="<%= room.id_cuarto %>"><%= room.nombre_cuarto %></option>
+                            <% }); %>
+                            <% } else { %>
+                            <option value="">No hay cuartos disponibles</option>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="equipo-selection">Seleccione equipo</label>
+                        <select id="equipo-selection">
+                            
+                        </select>
+                    </div>
+                    <div class="buttons">
+                        <button id="initTPMBtn">Siguiente</button>
+                    </div>
+                </div>
             </div>
-            <div class="form-group">
-              <label for="equipo-selection">Seleccione equipo</label>
-              <select id="equipo-selection">
-                
-              </select>
-            </div>
-            <div class="buttons">
-              <button id="prevBtn" class="secondary" disabled>Anterior</button>
-              <button id="nextBtn">Siguiente</button>
-            </div>
-          </div>
-  
-          <!-- Second Form -->
-          <div id="second-form" class="space-y-4 hidden">
-            <div class="form-group">
-              <label for="username">Nombre de usuario</label>
-              <input type="text" id="username" value="ghh1slp">
-            </div>
-            <div class="form-group">
-              <label for="nombre">Nombre</label>
-              <input type="text" id="nombre" value="Hugo Armando">
-            </div>
-            <div class="form-group">
-              <label for="apellido">Apellido</label>
-              <input type="text" id="apellido" value="García Hernández">
-            </div>
-            <div class="buttons">
-              <button id="prevBtn2" class="secondary">Anterior</button>
-              <button id="initTPMBtn">Iniciar TPM</button>
-            </div>
-          </div>
         </div>
-  
-        <div class="indicator">
-          <div class="active"></div>
-          <div></div>
-        </div>
-      </div>
     </div>
 
     <!-- Script para mandar el id_cuarto, id_equipo a la ruta mapeada en el controlador 'mostrarPuntosTPM'
@@ -185,23 +159,18 @@
           // Capturar los datos del formulario
           const id_cuarto = document.getElementById('cuarto-selection').value;
           const id_equipo = document.getElementById('equipo-selection').value;
-          const username = document.getElementById('username').value;
-          const nombre = document.getElementById('nombre').value;
-          const apellido = document.getElementById('apellido').value;
-  
+          
           console.log("id_cuarto: ", id_cuarto);
           console.log("id_equipo: ", id_equipo);
-          console.log("username: ", username);
-          console.log("nombre: ", nombre, "apellido: ", apellido);
           
           // Validación de campos vacíos
-          if (!id_cuarto || !id_equipo || !username || !nombre || !apellido) {
+          if (!id_cuarto || !id_equipo) {
               alert('Por favor, complete todos los campos.');
               return;
           }
   
           // Redirigir al usuario a la nueva ruta con los parámetros en la URL
-          window.location.href = `/puntos/${id_cuarto}/${id_equipo}`;
+          window.location.href = `/tpm/admCheckList/${id_cuarto}/${id_equipo}`;
       });
   </script>
 
@@ -264,34 +233,6 @@
           }
       }
       </script>
-      
     
-    <!-- Script para alternar entre los formularios first-form y second-form según el botón que se presione -->
-    <script>
-      const firstForm = document.getElementById('first-form');
-      const secondForm = document.getElementById('second-form');
-      const prevBtn = document.getElementById('prevBtn');
-      const nextBtn = document.getElementById('nextBtn');
-      const prevBtn2 = document.getElementById('prevBtn2');
-      const indicators = document.querySelectorAll('.indicator div');
-  
-      nextBtn.addEventListener('click', () => {
-        firstForm.classList.add('hidden');
-        secondForm.classList.remove('hidden');
-        prevBtn.disabled = false;
-        indicators[0].classList.remove('active');
-        indicators[1].classList.add('active');
-      });
-  
-      prevBtn2.addEventListener('click', () => {
-        firstForm.classList.remove('hidden');
-        secondForm.classList.add('hidden');
-        prevBtn.disabled = true;
-        indicators[0].classList.add('active');
-        indicators[1].classList.remove('active');
-      });
-    </script>
-
-
   </body>
 </html>

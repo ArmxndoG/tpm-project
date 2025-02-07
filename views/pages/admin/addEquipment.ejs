@@ -1,0 +1,87 @@
+<%- include('../../layouts/header') %> <!-- Incluye el header -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Agregar equipo</title>
+    <link rel="stylesheet" href="/css/agregar_equipo.css">
+</head>
+<body>
+    
+    <div class="container">
+        <div class="form-wrapper">
+            <h2>Agregar equipo</h2>
+            <div id="form-container">
+                <!-- First Form -->
+                <div id="first-form" class="space-y-4">
+                    <div class="form-group">
+                        <label for="nombre_equipo">Nombre del equipo</label>
+                        <input type="text" id="nombre_equipo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cuarto">Seleccione cuarto</label>
+                        <select id="cuarto">
+                            <% if (rooms && rooms.length > 0) { %>
+                                <% rooms.forEach(room => { %>
+                                  <option value="<%= room.id_cuarto %>"><%= room.nombre_cuarto %></option>
+                                <% }); %>
+                              <% } else { %>
+                                <option value="">No hay cuartos disponibles</option>
+                            <% } %>
+                        </select>
+                      </div>
+                  </div>
+                  <div class="buttons">
+                    <button id="btn_agregar" class="primary">Agregar</button>
+                  </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        const btn_agregar_equipo = document.getElementById('btn_agregar');
+
+        btn_agregar_equipo.addEventListener("click", async (event) =>{
+            //Captura de datos del formulairo
+            const nombre_equipo = document.getElementById('nombre_equipo').value;
+            const id_cuarto = document.getElementById('cuarto').value;
+            console.log(nombre_equipo, " ", id_cuarto);
+            
+
+            try {
+                // Enviar los datos al servidor
+                const response = await fetch('/tpm/admEquipments/addEquipment/added', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json', // Especifica que el cuerpo es JSON
+                    },
+                    body: JSON.stringify({
+                        nombre_equipo: nombre_equipo,
+                        id_cuarto: id_cuarto,
+                    })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert('Equipo registrado exitosamente');
+                    console.log('Respuesta del servidor:', result);
+                } else {
+                    console.error('Error del servidor:', result);
+                    alert('Error al enviar los datos');
+                }
+            } catch (error) {
+                console.error('Error al enviar la solicitud:', error);
+                alert('Error al enviar los datos');
+            }
+
+        });
+
+    </script>
+
+
+
+</body>
+</html>

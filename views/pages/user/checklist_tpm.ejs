@@ -1,4 +1,4 @@
-<%- include('../layouts/header') %> <!-- Incluye el header -->
+<%- include('../../layouts/header') %> <!-- Incluye el header -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -17,22 +17,16 @@
         </div>
 
         <div id="contenedor-puntos">
-            <% puntos.forEach((punto, index) => { %>
+            <% Object.values(puntos).forEach((punto, index) => { %>
             <div class="contenedor-punto <%= index === 0 ? 'activo' : '' %>" data-index="<%= index %>">
                 <div class="contenedor-punto-info">
                     <div class="punto-info">
-                        <h3>No. <%= punto.orden %> - <%= punto.nombre_categoria %></h3>
-                        <h4>Actividad</h4>
-                        <p><%= punto.actividad %></p>
-                        <h4>Tiempo</h4>
-                        <p><%= punto.tiempo %></p>
-                        <h4>Procedimiento</h4>
-                        <p><%= punto.procedimiento %></p>
-                        <h4>Herramienta/Material</h4>
-                        <p><%= punto.herramienta_material %></p>
-                        <h4>Responsable</h4>
-                        <p><%= punto.responsable %></p>
-                    
+                        <h3>No. <%= punto.orden %></h3>
+                        <% punto.atributos.forEach((atributo) => { %>
+                            <h4><%= atributo.titulo %></h4>
+                            <p><%= atributo.valor %></p>
+                        <% }); %>
+        
                         <div class="estado-selector">
                             <label>
                                 <input type="radio" name="estado-<%= index %>" value="ok" class="radio-custom"> OK
@@ -41,7 +35,7 @@
                                 <input type="radio" name="estado-<%= index %>" value="nok" class="radio-custom"> NOK
                             </label>
                         </div>
-                    
+                        
                         <div class="nok-contenido">
                             <label for="comentario-<%= index %>">Comentario:</label>
                             <textarea required id="comentario-<%= index %>" rows="3" style="width: 100%;"></textarea>
@@ -55,20 +49,27 @@
                 <div class='contenedor-ayudavisual'>
                     <div class="ayuda-visual">
                         <button class="av_flecha_izquierda">&#9664;</button>
-                        <img src="/uploads/<%= punto.ayuda_visual[0] %>" alt="Ayuda Visual" style="width: 100%; height: 100%; object-fit: cover;" data-index="0">
+                        <% if (punto.ayudas_visuales.length > 0) { %>
+                            <img src="/uploads/<%= punto.ayudas_visuales[0] %>" alt="Ayuda Visual" style="width: 100%; height: 100%; object-fit: cover;" data-index="0">
+                        <% } else { %>
+                            <p>No hay ayudas visuales disponibles.</p>
+                        <% } %>
                         <button class="av_flecha_derecha">&#9654;</button>
                     </div>
-                    <p style="margin-top: 10px;">Ayuda Visual <span class="imagen-actual">1</span> de <%= punto.ayuda_visual.length %></p>
+                    <% if (punto.ayudas_visuales.length > 0) { %>
+                        <p style="margin-top: 10px;">Ayuda Visual <span class="imagen-actual">1</span> de <%= punto.ayudas_visuales.length %></p>
+                    <% } %>
                 </div>
             </div>
-            <% }) %>
+            <% }); %>
         </div>
 
         <div class="navegacion-footer">
             <button id="punto-anterior" class="btn-nav">Anterior</button>
             
             <div class="indicadores-progreso">
-                <% for(let i = 0; i < puntos.length; i++) { %>
+                <% const puntosArray = Object.keys(puntos); %>
+                <% for(let i = 0; i < puntosArray.length; i++) { %>
                     <div class="indicador <%= i === 0 ? 'activo' : '' %>" data-index="<%= i %>"></div>
                 <% } %>
             </div>
@@ -79,6 +80,7 @@
             </div>
         </div>
     </div>
+    
 
   <script>
     
@@ -91,9 +93,8 @@
         const contenedoresPuntos = document.querySelectorAll('.contenedor-punto');
         const indicadores = document.querySelectorAll('.indicador');
         let puntoActualIndex = 0;
-        //Parsea los puntos y los estructura con propiedades adicionales
-        //eg: [{id_pxe: 9, id_punto: 1, id_equipo: 1, nombre_categoria: 'Seguridad', actividad: 'Revisar correas', estado: 'nok', comentario: 'test'…}]
-        const puntos = JSON.parse('<%- JSON.stringify(puntos) %>').map(p => ({
+        
+        const puntos = Object.values(JSON.parse('<%- JSON.stringify(puntos) %>')).map(p => ({
             ...p,
             estado: null, 
             comentario: "", 
@@ -187,7 +188,7 @@
             }
 
             try {
-                const response = await fetch('/puntos/tpm-upload', {
+                const response = await fetch('/tpm/checklist/data-upload', {
                     method: 'POST',
                     body: formData,
                 });
@@ -210,7 +211,7 @@
         document.querySelectorAll('.contenedor-punto').forEach((contenedor, index) => {
             
             const imagenElement = contenedor.querySelector('.ayuda-visual img');//obiene el elemento de imagen del contenedor
-            const imagenes = puntos[index].ayuda_visual;//lista de imagenes asociadas al punto
+            const imagenes = puntos[index].ayudas_visuales;//lista de imagenes asociadas al punto
             const totalImagenes = imagenes.length;//total de imagenes asociadas
             const imagenActualElement = contenedor.querySelector('.imagen-actual'); //elemento de imagen actual
             let imagenActual = 0;
@@ -231,6 +232,21 @@
                 imagenActual = (imagenActual + 1) % totalImagenes;
                 actualizarImagen();
             });
+            //Seleccionar todos los inputs de imagenes y validar que los archivos adjuntados sean imagenes
+            document.querySelectorAll('input[type="file"]').forEach(input => {
+                input.addEventListener('change', event => {
+                    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                    const files = event.target.files;
+                    for (let file of files) {
+                        if (!allowedTypes.includes(file.type)) {
+                            alert(`El archivo ${file.name} no es una imagen válida. Por favor, sube imágenes PNG, JPEG o JPG.`);
+                            input.value = ''; // Resetea el input
+                            break;
+                        }
+                    }
+                });
+            });
+
         });
 
         // Manejar la previsualización de imágenes con la opción de eliminar
@@ -301,6 +317,7 @@
             indicadores.forEach((indicador, index) => {
                 indicador.classList.toggle('activo', index === puntoActualIndex);
             });
+
             
             puntoAnterior.disabled = puntoActualIndex === 0;
             
@@ -308,7 +325,7 @@
             const esUltimoPunto = puntoActualIndex === contenedoresPuntos.length - 1;
             puntoSiguiente.style.display = esUltimoPunto ? 'none' : 'inline-block';
             guardarEstados.style.display = esUltimoPunto ? 'inline-block' : 'none';
-            }
+        }
             
         puntoAnterior.addEventListener('click', () => {
             if (puntoActualIndex > 0) {
