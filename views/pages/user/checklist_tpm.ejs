@@ -10,10 +10,18 @@
 <body>
   
     <div class="contenedor-principal">
-        <div class="header-info">
-            <h2>ID CUARTO: <%= id_cuarto %></h2>
-            <h2>ID EQUIPO: <%= id_equipo %></h2>
-            <h2 id="id-tpm">ID TPM: <%= id_tpm %></h2>
+       
+        <!-- Contenedor de imagen header para vista de usuario -->
+        <div class="header-image-container">
+            <% if (currentHeader && currentHeader.length > 0 && currentHeader[0].imagen) { %>
+                <div class="header-image-wrapper">
+                    <img src="/resources/headers/<%= currentHeader[0].imagen %>" alt="Header Image" class="header-image">
+                </div>
+            <% } else { %>
+                <div class="header-image-placeholder">
+                    <p>No hay header disponible</p>
+                </div>
+            <% } %>
         </div>
 
         <div id="contenedor-puntos">
@@ -48,13 +56,15 @@
                 
                 <div class='contenedor-ayudavisual'>
                     <div class="ayuda-visual">
-                        <button class="av_flecha_izquierda">&#9664;</button>
+                       <button class="av_flecha_izquierda">&#9664;</button>
+
                         <% if (punto.ayudas_visuales.length > 0) { %>
-                            <img src="/uploads/<%= punto.ayudas_visuales[0] %>" alt="Ayuda Visual" style="width: 100%; height: 100%; object-fit: cover;" data-index="0">
+                            <img src="/resources/ayudas-visuales/<%= punto.ayudas_visuales[0] %>" alt="Ayuda Visual" style="width: 100%; height: 100%; object-fit: cover;" data-index="0">
                         <% } else { %>
                             <p>No hay ayudas visuales disponibles.</p>
                         <% } %>
                         <button class="av_flecha_derecha">&#9654;</button>
+                        
                     </div>
                     <% if (punto.ayudas_visuales.length > 0) { %>
                         <p style="margin-top: 10px;">Ayuda Visual <span class="imagen-actual">1</span> de <%= punto.ayudas_visuales.length %></p>
@@ -76,11 +86,56 @@
             
             <div class="botones-derecha">
                 <button id="punto-siguiente" class="btn-nav">Siguiente</button>
-                <button id="guardar-estados" class="btn-nav">Guardar Estados</button>
+                <button id="guardar-estados" class="btn-nav">Enviar</button>
             </div>
         </div>
     </div>
-    
+
+ <!-- Modal de Declaración de realización (Amarillo) -->
+<div id="modalDeclaracion" class="modal">
+    <div class="modal-content modal-declaracion">
+      <div class="modal-header">
+        <div class="modal-icon">
+            <img src="/icons/alert-info.svg" alt="Info">
+        </div>
+        <h2>Declaración de realización</h2>
+        <span class="close-modal">
+            <img src="/icons/close.svg" alt="Cerrar">
+        </span>
+      </div>
+      <div class="modal-body">
+        <h3>Confirmación de TPM</h3>
+        <p>Declaro que realicé todos los puntos correspondientes al TPM del equipo en cuestión y así mismo agregué evidencia de los puntos marcados como 'no ok'</p>
+        <p class="info-detail">Fecha de realización: <span id="modal-fecha"></span></p>
+        <p class="info-detail">Responsable: <span id="modal-responsable">Hugo García</span></p>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-cerrar" class="btn-secundario">Cerrar</button>
+        <button id="btn-aceptar" class="btn-primario">Aceptar</button>
+      </div>
+    </div>
+  </div>
+  
+ 
+  <div id="modalFinalizado" class="modal">
+    <div class="modal-content modal-finalizado">
+      <div class="modal-header">
+        <div class="modal-icon">
+            <img src="/icons/alert-success.svg" alt="Éxito">
+        </div>
+        <h2>TPM Finalizado</h2>
+      </div>
+      <div class="modal-body">
+        <h3>TPM completado correctamente</h3>
+        <p>El TPM ha sido enviado y registrado correctamente en la base de datos</p>
+        <p class="info-detail">Fecha de realización: <span id="modal-fecha-finalizado"></span></p>
+        <p class="info-detail">Responsable: <span id="modal-responsable-finalizado">Hugo García</span></p>
+      </div>
+      <div class="modal-footer">
+        <button id="btn-aceptar-finalizado" class="btn-primario">Aceptar</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     
@@ -129,6 +184,7 @@
         * Maneja el clic en el botón "Guardar Estados".
         * Recopila los datos de los puntos, crea un FormData y los envía al servidor.
         */
+        // Reemplaza el evento actual del botón guardar-estados con este código
         guardarEstados.addEventListener('click', async (event) => {
             event.preventDefault();
 
@@ -155,7 +211,38 @@
                 return; // Detener el proceso si no se cumplen las condiciones
             }
 
-            // Continuar con el envío si todos los estados están seleccionados
+            // Verificar comentarios en puntos NOK
+            puntos.forEach((punto, index) => {
+                const container = document.querySelector(`.contenedor-punto[data-index="${index}"]`);
+                const estadoSeleccionado = container.querySelector(`[name="estado-${index}"]:checked`)?.value;
+                
+                if (estadoSeleccionado === 'nok') {
+                    const comentario = container.querySelector(`#comentario-${index}`).value;
+                    if(comentario == '') {
+                        comentarioEscrito = false;
+                    }
+                }
+            });
+            
+            if(!comentarioEscrito) {
+                alert("Por favor escriba comentario en el punto marcado como NOK");
+                return;
+            }
+
+            // Si todo está correcto, mostrar el modal de declaración
+            const fechaActual = new Date().toLocaleString();
+            document.getElementById('modal-fecha').textContent = fechaActual;
+            document.getElementById('modal-fecha-finalizado').textContent = fechaActual;
+            
+            const modalDeclaracion = document.getElementById('modalDeclaracion');
+            modalDeclaracion.style.display = 'flex';
+        });
+
+        // Manejar la acción de aceptar en el modal de declaración
+        document.getElementById('btn-aceptar').addEventListener('click', async function() {
+            document.getElementById('modalDeclaracion').style.display = 'none';
+            
+            // Crear y enviar los datos
             const formData = new FormData();
 
             puntos.forEach((punto, index) => {
@@ -169,12 +256,7 @@
 
                 if (estadoSeleccionado === 'nok') { 
                     punto.comentario = container.querySelector(`#comentario-${index}`).value;
-                    console.log("comentario: ",punto.comentario);
                     formData.append(`puntos[${index}][comentario]`, punto.comentario);
-
-                    if(punto.comentario == ''){//si el comentairo del punto marcado como 'nok' esta vacío activar la bandera
-                        comentarioEscrito = false;
-                    }
 
                     const imagenesInput = container.querySelector(`#imagenes-${index}`);
                     Array.from(imagenesInput.files).forEach((file, fileIndex) => {
@@ -182,10 +264,6 @@
                     });
                 }
             });
-            if(!comentarioEscrito){//si hubo algún comentario vacío mandar una alerta y salir del evento para no publicar datos.
-                alert("Por favor escriba comentario en el punto marcado como NOK");
-                return;
-            }
 
             try {
                 const response = await fetch('/tpm/checklist/data-upload', {
@@ -195,7 +273,9 @@
 
                 const result = await response.json();
                 if (response.ok) {
-                    alert('Datos enviados correctamente');
+                    // Mostrar modal de éxito
+                    const modalFinalizado = document.getElementById('modalFinalizado');
+                    modalFinalizado.style.display = 'flex';
                     console.log('Respuesta del servidor:', result);
                 } else {
                     console.error('Error del servidor:', result);
@@ -207,6 +287,24 @@
             }
         });
 
+        // Eventos para cerrar los modales
+        document.querySelectorAll('.close-modal, #btn-cerrar').forEach(element => {
+            element.addEventListener('click', function() {
+                document.getElementById('modalDeclaracion').style.display = 'none';
+                document.getElementById('modalFinalizado').style.display = 'none';
+            });
+        });
+
+        // Evento para el botón de aceptar finalizado
+        document.getElementById('btn-aceptar-finalizado').addEventListener('click', function() {
+            document.getElementById('modalFinalizado').style.display = 'none';
+            // Aquí puedes agregar redirección si es necesario
+            // window.location.href = '/otra-pagina';
+        });
+
+
+    
+
         //Seleccionar todos los contenedores de los puntos y recorrerlos uno por uno...
         document.querySelectorAll('.contenedor-punto').forEach((contenedor, index) => {
             
@@ -217,7 +315,7 @@
             let imagenActual = 0;
 
             const actualizarImagen = () => {
-                imagenElement.src = `/uploads/${imagenes[imagenActual]}`;//ruta relativa
+                imagenElement.src = `/resources/ayudas-visuales/${imagenes[imagenActual]}`;//ruta relativa
                 imagenActualElement.textContent = imagenActual + 1;//Actualiza el texto del indice de la imagen actual
             };
 

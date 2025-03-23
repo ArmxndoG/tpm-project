@@ -1,60 +1,10 @@
-<style>
-    /* Header general */
-    header {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        z-index: 1000;
-        background-color: white;
-        display: flex;
-        flex-direction: column;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        transform: translateY(0); /* Posición inicial del header */
-        transition: transform 0.3s ease-in-out; /* Animación suave */
-    }
-
-    /* Barra de color */
-    .color-bar img {
-        width: 100%;
-        height: auto;
-    }
-
-    /* Contenido del header */
-    .header-content {
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-        padding: 10px 20px;
-    }
-
-    .logo img {
-        max-width: 150px;
-        height: auto;
-    }
-
-    /* Ajustes responsivos */
-    @media (max-width: 768px) {
-        .header-content {
-            justify-content: center;
-        }
-        .logo img {
-            max-width: 100px;
-        }
-    }
-
-    /* Body */
-    body {
-        margin: 0;
-        margin-top: 50px;
-        padding: 100px;
-        padding-top: calc(50px + 25px); /* Espacio para el header */
-        font-family: Arial, sans-serif;
-    }
-</style>
 
 <head>
     <link rel="icon" href="/icons/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/css/header.css"/>
+    <script src="/js/sidebar.js"></script>
+    
+
 </head>
 <header>
     <div class="color-bar">
@@ -66,5 +16,63 @@
         </div>
     </nav>
 </header>
+
+<div class="sidebar-trigger"></div>
+<nav class="sidebar">
+    <div class="sidebar-header">
+        TPM Automation
+    </div>
+    <ul class="sidebar-nav">
+        <li class="has-dropdown">
+            <a href="#">
+                <img src="/icons/user.svg" alt="Usuario" class="menu-icon">
+                Usuario
+                <img src="/icons/down.svg" alt="Desplegar" class="dropdown-icon">
+            </a>
+            <ul class="submenu">
+                <li>
+                    <a href="/tpm/formInit/">
+                        <img src="/icons/clipboard-add.svg" alt="Hacer TPM" class="menu-icon">
+                        Hacer TPM
+                    </a>
+                </li>
+            </ul>
+        </li>
+        <li class="has-dropdown">
+            <a href="#">
+                <img src="/icons/admin.svg" alt="Administrador" class="menu-icon">
+                Administrador
+                <img src="/icons/down.svg" alt="Desplegar" class="dropdown-icon">
+            </a>
+            <ul class="submenu">
+                <li>
+                    <a href="/tpm/admEquipments/">
+                        <img src="/icons/equipments.svg" alt="Administrar equipos" class="menu-icon">
+                        Administrar Equipos
+                    </a>
+                </li>
+                <li>
+                    <a href="/tpm/admChecklist/">
+                        <img src="/icons/checklist.svg" alt="Administrar checklist" class="menu-icon">
+                        Administrar Checklist
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <img src="/icons/opl.svg" alt="Revisión de OPL" class="menu-icon">
+                        Revisión de OPL
+                    </a>
+                </li>
+                <li>
+                    <a href="#">
+                        <img src="/icons/efficiency.svg" alt="Métricas de cumplimiento" class="menu-icon">
+                        Métricas de Cumplimiento
+                    </a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+</nav>
+
 
 

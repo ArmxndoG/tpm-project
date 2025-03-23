@@ -6,174 +6,288 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Modificación de puntos</title>
 
-    <link rel="stylesheet" href="/css/agregar_equipo.css">
+    <link rel="stylesheet" href="/css/admChecklist.css">
     <script src="/js/Sortable.min.js"></script> <!-- Importado desde la carpeta static -->
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f4f4f4;
-        }
-        
-        #sortable-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        
-        .sortable-item {
-            background-color: white;
-            border: 1px solid #e0e0e0;
-            margin-bottom: 10px;
-            padding: 15px;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .order-number {
-            min-width: 30px;
-            margin-right: 15px;
-            font-weight: bold;
-            color: #666;
-        }
-        
-        .item-text {
-            flex-grow: 1;
-        }
-        
-        .item-actions {
-            display: flex;
-            gap: 15px;
-            margin-left: 15px;
-        }
-        
-        .action-icon {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            opacity: 0.7;
-            transition: opacity 0.3s;
-        }
-        
-        .action-icon:hover {
-            opacity: 1;
-        }
-        
-        #guardar-cambios {
-            width: 100%;
-            padding: 12px;
-            background-color: #2196F3;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-        
-        #guardar-cambios:hover {
-            background-color: #1976D2;
-        }
-        .c {
-            margin-top: 100px;
-            
-        }
-    </style>
-
+    
 </head>
 
 <body>
     <div class="c">
-        <h1>ChekList</h1>
-        <ul id="sortable-list">
-            <% puntos.forEach((punto) => { %>
-            <li class="sortable-item" data-id="<%= punto.id_punto %>" data-valor="<%= punto.valor %>">
-                <span class="order-number"><%= punto.orden %></span>
-                <span class="item-text"><%= punto.valor %></span>
-                <div class="item-actions">
-                    <img src="/icons/edit.svg" alt="Editar" class="action-icon edit-icon">
-                    <img src="/icons/delete.svg" alt="Eliminar" class="action-icon delete-icon">
+        <h1>Check List</h1>
+        <p>Para cambiar el orden de los puntos es necesario mantener click sobre las tres lineas y arrastrar el punto a la nueva ubicación.</p>
+        <!-- Nuevo contenedor para imagen de header -->
+        <div class="header-image-container">
+            <% if (imagen_header && imagen_header.length > 0 && imagen_header[0].imagen) { %>
+                <!-- Si existe imagen de header -->
+                <div class="header-image-wrapper">
+                    <img src="/resources/headers/<%= imagen_header[0].imagen %>" alt="Header Image" class="header-image">
+                    <div class="header-image-overlay replace-header-image">
+                        <img src="/icons/replace.svg" alt="Reemplazar imagen" class="header-action-icon">
+                    </div>
                 </div>
-            </li>
-            <% }); %>
-        </ul>
+            <% } else { %>
+                <!-- Si NO existe imagen de header -->
+                <div class="header-image-placeholder add-header-image">
+                    <img src="/icons/add.svg" alt="Agregar imagen" class="header-action-icon">
+                    <p>Agregar imagen de header</p>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- Input de archivo oculto -->
+        <input 
+            type="file" 
+            id="headerImageInput" 
+            name="headerImage" 
+            accept=".png,.jpg,.jpeg" 
+            style="display:none;"
+        >
+        </div>
+        <!-- Si hay puntos asociados al equipo entonces listamelos -->
+        <% if (puntos && puntos.length > 0) { %>
+            <ul id="sortable-list">
+                <% puntos.forEach((punto) => { %>
+                <li class="sortable-item" data-id="<%= punto.id_punto %>" data-valor="<%= punto.valor %>">
+                    <span class="drag-handle">☰</span>
+                    <span class="order-number"><%= punto.orden %></span>
+                    <span class="item-text">
+                        <%= punto.valor %>
+                    </span>
+                    <div class="item-actions">
+                        <img src="/icons/edit.svg" alt="Editar" class="action-icon edit-icon">
+                        <img src="/icons/delete.svg" alt="Eliminar" class="action-icon delete-icon">
+                    </div>
+                </li>
+                <% }); %>
+            </ul>
+        <% } %>
+
+        <!-- Mostrar el botón de agregar siempre -->
+        <div class="add-point-container">
+            <div class="add-point-button" id="addNewPointBtn">
+                <img src="/icons/add.svg" alt="Agregar punto" class="header-action-icon">
+                <p>Agregar punto</p>
+            </div>
+        </div>
     </div>
     
-    <button id="guardar-cambios">Guardar Cambios</button>
-
-
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        const id_equipo = JSON.parse('<%= id_equipo %>') // id del equipo
+        // Espera a que el DOM esté completamente cargado antes de ejecutar el código
+        document.addEventListener("DOMContentLoaded", () => {
+
+            const headerImageInput = document.getElementById('headerImageInput');
+            const replaceHeaderImageElements = document.querySelectorAll('.replace-header-image');
+            const addHeaderImageElements = document.querySelectorAll('.add-header-image');
+            const addNewPointBtn = document.getElementById('addNewPointBtn');
             let puntoEliminadoId = null; // Variable para almacenar el ID del punto eliminado
-            var sortable = new Sortable(document.getElementById("sortable-list"), {
-                animation: 150,
-                onEnd: function () {
-                    actualizarOrden();
+
+            // Función para validar archivos
+            function validateImageFile(file) {
+                const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+                const maxSize = 5 * 1024 * 1024; // 5MB
+
+                if (!allowedTypes.includes(file.type)) {
+                    alert('Solo se permiten archivos PNG y JPG');
+                    return false;
                 }
-            });
-    
-            function actualizarOrden() {
-                let elementos = document.querySelectorAll(".sortable-item");
-    
-                elementos.forEach((elemento, index) => {
-                    let nuevoOrden = index + 1;
-                    elemento.dataset.orden = nuevoOrden;
-                    
-                    // Update only the order number and maintain the original text
-                    let orderSpan = elemento.querySelector('.order-number');
-                    let textSpan = elemento.querySelector('.item-text');
-                    
-                    orderSpan.textContent = nuevoOrden;
-                    textSpan.textContent = elemento.getAttribute('data-valor');
+
+                if (file.size > maxSize) {
+                    alert('El archivo no debe superar los 5MB');
+                    return false;
+                }
+
+                return true;
+            }
+            // Función para subir imagen
+            function uploadHeaderImage(file, isReplace) {
+                const formData = new FormData();
+                formData.append('headerImage', file);
+                formData.append('id_equipo', id_equipo);
+
+                const url = isReplace ? '/tpm/admChecklist/replaceImgHeader' : '/tpm/admChecklist/addImgHeader';
+
+                fetch(url, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Recargar la página o actualizar la imagen
+                        window.location.reload();
+                    } else {
+                        alert('Error al subir la imagen');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Ocurrió un error al subir la imagen');
                 });
-    
-                return Array.from(elementos).map(elemento => ({
+            }
+            // Eventos para abrir selector de archivos
+            [...replaceHeaderImageElements, ...addHeaderImageElements].forEach(element => {
+                element.addEventListener('click', () => {
+                    headerImageInput.click();
+                });
+            });
+            
+            if (addNewPointBtn) {
+                addNewPointBtn.addEventListener('click', () => {
+                    // Llamar a la API para crear un punto vacío
+                    fetch('/tpm/admChecklist/addEmptyPoint', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json' 
+                        },
+                        body: JSON.stringify({ id_equipo: id_equipo })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.puntoId) {
+                            // En lugar de redirigir, añadir el nuevo punto a la lista
+                            addNewPointToList(data.puntoId, data.orden);
+                            
+                            // Si quieres, puedes preguntar al usuario si desea editar ahora
+                            /*if (confirm('¿Deseas editar este punto ahora?')) {
+                                window.location.href = `/tpm/admChecklist/edit/${data.puntoId}`;
+                            }*/
+                        } else {
+                            alert('Error al crear nuevo punto');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Ocurrió un error al crear el punto');
+                    });
+                });
+            }
+            // Función para añadir un nuevo punto a la lista
+            function addNewPointToList(puntoId, orden) {
+                const list = document.getElementById('sortable-list');
+                
+                // Si la lista no existe, créala
+                if (!list) {
+                    const container = document.querySelector('.c').parentNode;
+                    const newList = document.createElement('ul');
+                    newList.id = 'sortable-list';
+                    container.appendChild(newList);
+                    
+                    // Inicializar Sortable en la nueva lista
+                    new Sortable(newList, {
+                        animation: 150,
+                        onEnd: actualizarOrden
+                    });
+                }
+                
+                // Crear el nuevo elemento de la lista
+                const newItem = document.createElement('li');
+                newItem.className = 'sortable-item';
+                newItem.dataset.id = puntoId;
+                newItem.dataset.valor = 'Punto vacío';
+                newItem.dataset.orden = orden;
+                
+                newItem.innerHTML = `
+                    <span class="drag-handle">☰</span>
+                    <span class="order-number">${orden}</span>
+                    <span class="item-text">Punto vacío</span>
+                    <div class="item-actions">
+                        <img src="/icons/edit.svg" alt="Editar" class="action-icon edit-icon">
+                        <img src="/icons/delete.svg" alt="Eliminar" class="action-icon delete-icon">
+                    </div>
+                `;
+                
+                // Añadir el nuevo elemento a la lista
+                document.getElementById('sortable-list').appendChild(newItem);
+                
+                // Añadir eventos a los nuevos iconos
+                const editIcon = newItem.querySelector('.edit-icon');
+                const deleteIcon = newItem.querySelector('.delete-icon');
+                
+                editIcon.addEventListener('click', function() {
+                    const puntoId = this.closest('.sortable-item').dataset.id;
+                    window.location.href = `/tpm/admChecklist/edit/${id_equipo}/${puntoId}`;
+                });
+                
+                deleteIcon.addEventListener('click', function() {
+                    eliminarPunto(this);
+                });
+            }
+
+            // Evento de selección de archivo
+            headerImageInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file && validateImageFile(file)) {
+                    const isReplace = replaceHeaderImageElements.length > 0;
+                    uploadHeaderImage(file, isReplace);
+                }
+                // Limpiar el input para permitir seleccionar el mismo archivo nuevamente
+                event.target.value = '';
+            });
+            
+            // Inicializa la funcionalidad de arrastrar y soltar en la lista de puntos
+            new Sortable(document.getElementById("sortable-list"), {
+                animation: 150, // Efecto de animación al mover elementos
+                onEnd: actualizarOrden // Función que se ejecuta cuando se cambia el orden
+            });
+
+            // Función para actualizar los números de orden en la interfaz
+            function actualizarOrden() {
+                document.querySelectorAll(".sortable-item").forEach((elemento, index) => {
+                    let nuevoOrden = index + 1; // Asigna el nuevo número de orden
+                    elemento.dataset.orden = nuevoOrden;
+                    elemento.querySelector('.order-number').textContent = nuevoOrden;
+                });
+
+                //Enviar el nuevo orden de los puntos al servidor
+                sendOrderToServer();
+            }
+
+            // Función para eliminar un punto de la lista
+            function eliminarPunto(iconElement) {
+                const listItem = iconElement.closest('.sortable-item'); // Encuentra el elemento padre
+                puntoEliminadoId = listItem.dataset.id; // Guarda el ID del punto eliminado
+
+                if (confirm('¿Estás seguro de que deseas eliminar este punto?')) {
+                    listItem.remove(); // Elimina el elemento del DOM
+                    actualizarOrden(); // Reorganiza los números de orden
+                }
+            }
+
+            function sendOrderToServer() {
+                const nuevoOrdenArray = [...document.querySelectorAll(".sortable-item")].map(elemento => ({
                     id: elemento.dataset.id,
                     orden: elemento.dataset.orden
                 }));
-            }
-            // Función para eliminar un punto
-            function eliminarPunto(iconElement) {
-                const listItem = iconElement.closest('.sortable-item');
-                puntoEliminadoId = listItem.dataset.id; // Guardamos el ID del eliminado
 
-                if (confirm('¿Estás seguro de que deseas eliminar este punto?')) {
-                    listItem.remove(); // Eliminar del DOM
-                    actualizarOrden(); // Reordenar los restantes
-                }
-            }
-
-            // Escuchar eventos de eliminación
-            document.querySelectorAll('.delete-icon').forEach(icon => {
-                icon.addEventListener('click', function () {
-                    eliminarPunto(this);
-                });
-            });
-    
-            document.getElementById("guardar-cambios").addEventListener("click", function () {
-                let nuevoOrdenArray = actualizarOrden();
                 fetch("/tpm/admChecklist/changeOrder", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ puntos: nuevoOrdenArray, puntoEliminadoId: puntoEliminadoId  })
+                    body: JSON.stringify({ puntos: nuevoOrdenArray, puntoEliminadoId })
                 })
                 .then(response => response.json())
-                .then(data => alert(data.message))
-                .catch(error => console.error("Error:", error));
-            });
+                .then(data => console.log("Orden actualizado:", data.message))
+                .catch(error => console.error("Error al actualizar el orden:", error));
+            }
+
+            //Evento de eliminación a cada icono de eliminar
             document.querySelectorAll(".delete-icon").forEach(icon => {
                 icon.addEventListener("click", function () {
-                    const listItem = this.closest('.sortable-item');
-                    if (confirm('¿Estás seguro de que deseas eliminar este punto?')) {
-                        listItem.remove();  // Solo lo eliminamos del frontend
-                        actualizarOrden(); // Reordenamos visualmente
-                    }
+                    eliminarPunto(this);
                 });
             });
 
-        
+
+            //Evento de editar a cada icono de edit
+            document.querySelectorAll(".edit-icon").forEach(icon => {
+                icon.addEventListener("click", function () {
+                    event.preventDefault(); // Evita que la página se recargue accidentalmente
+                    const puntoId = this.closest(".sortable-item").dataset.id;
+                    console.log("id obtenido en el frontend: ",puntoId);
+                    window.location.href = `/tpm/admChecklist/edit/${id_equipo}/${puntoId}`;
+                });
+            });
         });
-        </script>
+    </script>
 </body>
 </html>

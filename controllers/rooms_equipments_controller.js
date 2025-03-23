@@ -62,6 +62,42 @@ const insertarNuevoEquipo = async (req, res) => {
     }
 };
 
+const deleteEquipment = async (req, res) => {
+    try {
+        const { id_equipo } = req.params;
+        
+        // Validar que el ID del equipo es un número
+        if (!id_equipo || isNaN(id_equipo)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'ID de equipo inválido' 
+            });
+        }
+        
+        // Llamar al modelo para eliminar el equipo
+        const deleted = await Room.deleteEquipo(id_equipo);
+        
+        if (deleted) {
+            return res.status(200).json({ 
+                success: true, 
+                message: 'Equipo eliminado correctamente' 
+            });
+        } else {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'No se encontró el equipo para eliminar' 
+            });
+        }
+        
+    } catch (error) {
+        console.error('Error al eliminar equipo:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Error interno del servidor' 
+        });
+    }
+};
+
 const modLocalizacion = async(req,res) =>{
     const {id_equipo, id_cuarto} = req.body;
 
@@ -83,4 +119,5 @@ module.exports = {
     getAllEquipments,
     getRoomByEquipmentId,
     modLocalizacion,
+    deleteEquipment,
 };

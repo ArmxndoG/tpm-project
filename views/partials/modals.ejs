@@ -1,0 +1,67 @@
+<!-- Modal de Declaración de realización (Amarillo) -->
+<div id="modalDeclaracion" class="modal">
+    <div class="modal-content modal-declaracion">
+        <div class="modal-header">
+            <div class="modal-icon">
+                <img src="/icons/alert-info.svg" alt="Info">
+            </div>
+            <h2>Declaración de realización</h2>
+            <span class="close-modal">
+                <img src="/icons/close.svg" alt="Cerrar">
+            </span>
+        </div>
+        <div class="modal-body">
+            <h3>Confirmación de TPM</h3>
+            <p>Declaro que realicé todos los puntos correspondientes al TPM del equipo en cuestión y así mismo agregué evidencia de los puntos marcados como 'no ok'</p>
+            <p class="info-detail">Fecha de realización: <span id="modal-fecha"></span></p>
+            <p class="info-detail">Responsable: <span id="modal-responsable">Hugo García</span></p>
+        </div>
+        <div class="modal-footer">
+            <button id="btn-cerrar" class="btn-secundario">Cerrar</button>
+            <button id="btn-aceptar" class="btn-primario">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de TPM Finalizado (Verde) -->
+<div id="modalFinalizado" class="modal">
+    <div class="modal-content modal-finalizado">
+        <div class="modal-header">
+            <div class="modal-icon">
+                <img src="/icons/alert-success.svg" alt="Éxito">
+            </div>
+            <h2>TPM Finalizado</h2>
+        </div>
+        <div class="modal-body">
+            <h3>TPM completado correctamente</h3>
+            <p>El TPM ha sido enviado y registrado correctamente en la base de datos</p>
+            <p class="info-detail">Fecha de realización: <span id="modal-fecha-finalizado"></span></p>
+            <p class="info-detail">Responsable: <span id="modal-responsable-finalizado">Hugo García</span></p>
+        </div>
+        <div class="modal-footer">
+            <button id="btn-aceptar-finalizado" class="btn-primario">Aceptar</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación de Eliminación -->
+<div id="deleteConfirmModal" class="modal">
+    <div class="modal-content modal-declaracion">
+        <div class="modal-header">
+            <div class="modal-icon">
+                <img src="/icons/alert-warning.svg" alt="Advertencia"> <!-- Icono de advertencia -->
+            </div>
+            <h2>Advertencia</h2>
+            <span class="close-modal">
+                <img src="/icons/close.svg" alt="Cerrar">
+            </span>
+        </div>
+        <div class="modal-body">
+            <p>¿Estás seguro de que deseas eliminar este elemento?</p>
+        </div>
+        <div class="modal-footer">
+            <button id="btn-cancelar-eliminar" class="btn-secundario">Cancelar</button>
+            <button id="btn-eliminar" class="btn-primario">Eliminar</button>
+        </div>
+    </div>
+</div>

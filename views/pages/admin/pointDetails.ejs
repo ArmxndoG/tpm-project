@@ -1,0 +1,611 @@
+<!-- 
+  Template EJS que muestra una interfaz para visualizar y editar atributos junto con ayudas visuales.
+  Recibe un objeto 'data' con dos arrays:
+  - data.atributos: Lista de atributos con id, título y valor
+  - data.ayudasVisuales: Lista de imágenes de ayuda con id e imagen
+-->
+
+<%- include('../../layouts/header') %> 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/pointDetails.css">
+    <title>Vista de Atributos</title>
+</head>
+<body>
+    <!-- Contenedor principal para la sección de ayudas visuales -->
+    <div class="image-container">
+        <!-- Botón de añadir nueva imagen (fuera del carrusel) -->
+        <div class="add-image-button">
+            <input type="file" accept=".png, .jpg, .jpeg" id="newImageInput" style="display: none;" onchange="addNewImage(event)">
+            <button class="action-button" onclick="document.getElementById('newImageInput').click()">
+                <img src="/icons/add.svg" alt="Añadir imagen">
+            </button>
+        </div>
+
+        <!-- Controles de navegación para las imágenes -->
+        <div class="image-controls">
+            <button class="nav-button" onclick="changeImage(-1)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <button class="nav-button" onclick="changeImage(1)">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Contenedor del carrusel -->
+        <div class="carousel-container">
+            <% data.ayudasVisuales.forEach(function(ayuda, index) { %>
+                <div class="image-wrapper <%= (index === 0) ? 'visible' : 'hidden' %>" id="imageWrapper<%= index %>">
+                    <img id="imagen<%= index %>" src="/resources/ayudas-visuales/<%= ayuda.imagen %>" alt="Ayuda Visual">
+                    <!-- Botones de acción superpuestos -->
+                    <div class="image-actions">
+                        <input type="file" accept=".png, .jpg, .jpeg" id="fileInput<%= index %>" style="display: none;" onchange="replaceImage(event, '<%= index %>')">
+                        <button class="action-button replace" onclick="document.getElementById('fileInput<%= index %>').click()">
+                            <img src="/icons/replace.svg" alt="Reemplazar">
+                        </button>
+                        <button class="action-button delete" onclick="deleteImage('<%= index %>')">
+                            <img src="/icons/delete.svg" alt="Eliminar">
+                        </button>
+                    </div>
+                </div>
+            <% }); %>
+        </div>
+    </div>
+  
+    <!-- Tabla de Atributos -->
+    <table>
+
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Valor</th>
+                <th style="width: 50px"></th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Generación dinámica de filas de atributos -->
+            <% data.atributos.forEach(function(atributo) { %>
+                <tr>
+                    <td>
+                        <!-- Campo editable para el título -->
+                        <input type="text" 
+                               value="<%= atributo.titulo %>" 
+                               data-id="<%= atributo.id_atributo %>"
+                               data-field="titulo"
+                               oninput="detectChange()">
+                    </td>
+                    <td>
+                        <!-- Campo editable para el valor (textarea auto-ajustable) -->
+                        <textarea
+                            data-id="<%= atributo.id_atributo %>"
+                            data-field="valor"
+                            oninput="detectChange()"><%= atributo.valor %></textarea>
+                    </td>
+                    <td>
+                        <!-- Botón para eliminar el atributo -->
+                        <button class="delete-button" onclick="deleteAttribute('<%= atributo.id_atributo %>', this)">
+                            <img src="/icons/delete.svg" alt="Eliminar">
+                        </button>
+                    </td>
+                </tr>
+            <% }); %>
+        </tbody>
+        <!-- Botón de añadir nuevo atributo -->
+        <tfoot>
+            <tr>
+                <td colspan="3">
+                    <button class="add-attribute-button" onclick="addNewAttribute()">
+                        <img src="/icons/add.svg" alt="Añadir atributo">
+                    </button>
+                </td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Botón para guardar cambios (deshabilitado por defecto) -->
+    <button id="saveButton" disabled onclick="guardarCambios()">Guardar cambios</button>
+
+    <script>
+        const id_punto = JSON.parse('<%= id_punto %>') // id del punto 
+        const id_equipo = JSON.parse('<%= id_equipo %>') // id del equipo
+        let tempAttributeId = -1;
+
+        //console.log("Atributos del id_punto:", id_punto);
+
+        // Estado global de la aplicación
+        const state = {
+            originalData: JSON.parse('<%- JSON.stringify(data) %>'), // estructura original de los atributos
+            currentImageIndex: 0,
+            totalImages: 0,
+            nextImageId: 0,
+            updatedImages: [],
+            saveButton: null,
+            changes: {
+                hasAttributeChanges: false,
+                hasNewOrReplacedImages: false,
+                hasDeletedOnlyImages: false
+            }
+        };
+
+        /**
+         * Inicializa el estado de la aplicación
+         */
+        function initializeState() {
+            state.totalImages = state.originalData.ayudasVisuales.length; //total de imagenes iniciales
+            state.nextImageId = state.totalImages; // id de la siguiente imagen
+            state.updatedImages = [...state.originalData.ayudasVisuales]; 
+            state.saveButton = document.getElementById("saveButton");
+        }
+
+        /**
+         * Detecta cambios en los campos editables de atributos
+         * Se activa cada que se escribe en algún input o textarea
+         */
+         function detectAttributeChanges() {
+            const inputs = document.querySelectorAll("input[data-id], textarea[data-id]");
+            state.changes.hasAttributeChanges = Array.from(inputs).some(input => {
+                const id = parseInt(input.getAttribute("data-id"));
+                const field = input.getAttribute("data-field");
+                const isNew = input.getAttribute("data-new") === "true";
+
+                // Si es un nuevo atributo, cualquier contenido cuenta como cambio
+                if (isNew) {
+                    return input.value.trim() !== "";
+                }
+
+                // Para atributos existentes, comparar con el valor original
+                const originalAtributo = state.originalData.atributos.find(a => a.id_atributo === id);
+                return input.value !== originalAtributo[field];
+            });
+            
+            updateSaveButton();
+        }
+        /**
+         * Detecta cambios en las ayudas visuales
+         */
+         function detectVisualAidsChanges() {
+            let hasNewOrReplaced = false;
+            let hasDeletedOnly = false;
+
+            state.updatedImages.forEach(image => {
+                if (image.isNew || image.replaced) {
+                    hasNewOrReplaced = true;
+                } else if (image.deleted) {
+                    hasDeletedOnly = true;
+                }
+            });
+
+            // Si hay nuevas/reemplazadas, esa toma prioridad sobre las eliminadas
+            state.changes.hasNewOrReplacedImages = hasNewOrReplaced;
+            state.changes.hasDeletedOnlyImages = !hasNewOrReplaced && hasDeletedOnly;
+            
+            updateSaveButton();
+        }
+        /**
+         * Elimina un atributo de la tabla
+         * @param {string} id - ID del atributo a eliminar
+         * @param {HTMLElement} button - Botón que activó la eliminación
+         */
+         function deleteAttribute(id, button) {
+            const row = button.closest('tr');
+            if (row) {
+                // Obtener los datos del atributo eliminado
+                const titulo = row.querySelector('input[data-field="titulo"]').value;
+                const valor = row.querySelector('textarea[data-field="valor"]').value;
+
+                // Registrar el atributo eliminado en el estado
+                state.deletedAttributes = state.deletedAttributes || [];
+                state.deletedAttributes.push({
+                    id_atributo: id,
+                    id_punto: id_punto,
+                    titulo: titulo,
+                    valor: valor,
+                    isDeleted: true // Marcar como eliminado
+                });
+
+                // Eliminar la fila visualmente
+                row.remove();
+
+                // Indicar que hay cambios
+                state.changes.hasAttributeChanges = true;
+                updateSaveButton();
+            }
+        }
+        /**
+         * Actualiza el estado del botón de guardar
+         * Se activa el botón cuando se detecta un cambio en los atributos, imagenes.
+         */
+         function updateSaveButton() {
+            const hasAnyChanges = state.changes.hasAttributeChanges || 
+                                state.changes.hasNewOrReplacedImages ||
+                                state.changes.hasDeletedOnlyImages;
+            
+            state.saveButton.disabled = !hasAnyChanges;
+        }
+
+        /**
+         * Añade un nuevo atributo a la tabla
+         */
+        function addNewAttribute() {
+            const tbody = document.querySelector('tbody');
+            const newRow = document.createElement('tr');
+            
+            // Crear la estructura del nuevo atributo
+            newRow.innerHTML = `
+                <td>
+                    <input type="text" 
+                        value="" 
+                        data-id="${tempAttributeId}"
+                        data-field="titulo"
+                        data-new="true"
+                        oninput="detectChange()"
+                        placeholder="Ingrese título">
+                </td>
+                <td>
+                    <textarea
+                        data-id="${tempAttributeId}"
+                        data-field="valor"
+                        data-new="true"
+                        oninput="detectChange()"
+                        placeholder="Ingrese valor"></textarea>
+                </td>
+                <td>
+                    <button class="delete-button">
+                        <img src="/icons/delete.svg" alt="Eliminar">
+                    </button>
+                </td>
+            `;
+
+            // Añadir la nueva fila a la tabla
+            tbody.appendChild(newRow);
+
+            // Configurar el auto-resize para el nuevo textarea
+            const newTextarea = newRow.querySelector('textarea');
+            autoResize(newTextarea);
+
+            // Decrementar el ID temporal para el siguiente nuevo atributo
+            tempAttributeId--;
+            
+            // Activar el botón de guardar
+            state.changes.hasAttributeChanges = true;
+            updateSaveButton();
+        }
+        
+        /**
+         * Gestiona la adición de nuevas imágenes al carrusel
+         * @param {Event} event - Evento del input file
+         */
+        function addNewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const imageData = createImageElement();
+            updateImageState(imageData);
+            showNewImage();
+
+            function createImageElement() {
+                const wrapper = createElement('div', {
+                    className: 'image-wrapper hidden',
+                    id: `imageWrapper${state.nextImageId}`
+                });
+
+                const image = createElement('img', {
+                    id: `imagen${state.nextImageId}`,
+                    src: URL.createObjectURL(file),
+                    alt: 'Ayuda Visual'
+                });
+
+                const controls = createImageControls();
+                
+                wrapper.appendChild(image);
+                wrapper.appendChild(controls);
+                
+                document.querySelector('.carousel-container').appendChild(wrapper);
+                
+                return { wrapper, file };
+            }
+
+            function createImageControls() {
+                const controls = createElement('div', { className: 'image-actions' });
+                controls.innerHTML = `
+                    <input type="file" 
+                        id="fileInput${state.nextImageId}" 
+                        style="display: none;" 
+                        onchange="replaceImage(event, '${state.nextImageId}')">
+                    <button class="action-button replace" 
+                        onclick="document.getElementById('fileInput${state.nextImageId}').click()">
+                        <img src="/icons/replace.svg" alt="Reemplazar">
+                    </button>
+                    <button class="action-button delete" 
+                        onclick="deleteImage('${state.nextImageId}')">
+                        <img src="/icons/delete.svg" alt="Eliminar">
+                    </button>
+                `;
+                return controls;
+            }
+
+            function updateImageState({ file }) {
+                state.updatedImages.push({
+                    imagen: file.name,
+                    file: file,  // Guardamos el archivo para enviarlo después
+                    isNew: true
+                });
+                state.totalImages++;
+                state.nextImageId++;
+                detectVisualAidsChanges();
+            }
+
+            function showNewImage() {
+                const allImages = document.querySelectorAll('.image-wrapper');
+                allImages.forEach(img => {
+                    img.classList.add('hidden');
+                    img.classList.remove('visible');
+                });
+
+                const newImage = document.getElementById(`imageWrapper${state.nextImageId - 1}`);
+                newImage.classList.remove('hidden');
+                newImage.classList.add('visible');
+                state.currentImageIndex = state.totalImages - 1;
+            }
+        }
+
+        /**
+         * Crea un elemento DOM con atributos específicos
+         * @param {string} tag - Tipo de elemento HTML
+         * @param {Object} attributes - Atributos para el elemento
+         * @returns {HTMLElement}
+         */
+        function createElement(tag, attributes = {}) {
+            const element = document.createElement(tag);
+            Object.entries(attributes).forEach(([key, value]) => {
+                element[key] = value;
+            });
+            return element;
+        }
+
+        /**
+         * Ajusta automáticamente la altura de los textareas
+         * @param {HTMLElement} element - Elemento textarea
+         */
+        function autoResize(element) {
+            element.style.height = '36px';
+            element.style.height = element.scrollHeight + 'px';
+        }
+
+        /**
+         * Inicializa los textareas cuando se carga el documento
+         */
+         document.addEventListener('DOMContentLoaded', function() {
+            initializeState();
+            document.querySelectorAll('textarea').forEach(textarea => {
+                autoResize(textarea);
+                textarea.addEventListener('input', () => {
+                    autoResize(textarea);
+                    detectAttributeChanges();
+                });
+            });
+            
+            document.querySelectorAll('input[data-id]').forEach(input => {
+                input.addEventListener('input', detectAttributeChanges);
+            });
+        });
+
+        /**
+         * Detecta cambios en los campos editables
+         * Habilita/deshabilita el botón de guardar según corresponda
+         */
+         function detectChange() {
+            const inputs = document.querySelectorAll("input[data-id], textarea[data-id]");
+            const hasChanges = Array.from(inputs).some(input => {
+                const id = parseInt(input.getAttribute("data-id"));
+                const field = input.getAttribute("data-field");
+                const isNew = input.getAttribute("data-new") === "true";
+
+                // Si es un nuevo atributo, cualquier contenido cuenta como cambio
+                if (isNew) {
+                    return input.value.trim() !== "";
+                }
+
+                // Para atributos existentes, comparar con el valor original
+                const originalAtributo = state.originalData.atributos.find(a => a.id_atributo === id);
+                return input.value !== originalAtributo[field];
+            });
+            
+            state.saveButton.disabled = !hasChanges;
+        }
+
+        /**
+         * Cambia la imagen visible en el carrusel
+         * @param {number} direction - Dirección del cambio (-1 o 1)
+         */
+        function changeImage(direction) {
+            const images = document.querySelectorAll(".image-wrapper");
+            if (images.length === 0) return;
+            
+            // Ocultar imagen actual
+            images[state.currentImageIndex].classList.remove("visible");
+            images[state.currentImageIndex].classList.add("hidden");
+            
+            // Mostrar siguiente imagen
+            state.currentImageIndex = (state.currentImageIndex + direction + images.length) % images.length;
+            
+            images[state.currentImageIndex].classList.remove("hidden");
+            images[state.currentImageIndex].classList.add("visible");
+        }
+
+        /**
+         * Reemplaza una imagen existente
+         * @param {Event} event - Evento del input file
+         * @param {string} index - Índice de la imagen a reemplazar
+         */
+         function replaceImage(event, index) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const imageElement = document.getElementById(`imagen${index}`);
+            if (imageElement) {
+                imageElement.src = URL.createObjectURL(file);
+                state.updatedImages[index] = {
+                    ...state.updatedImages[index],
+                    imagen: file.name,
+                    file: file,  // Guardamos el archivo para enviarlo después
+                    replaced: true
+                };
+                detectVisualAidsChanges();
+            }
+        }
+
+        /**
+         * Elimina una imagen del carrusel
+         * @param {string} index - Índice de la imagen a eliminar
+         */
+         function deleteImage(index) {
+            const wrapper = document.getElementById(`imageWrapper${index}`);
+            if (wrapper) {
+                wrapper.style.display = 'none';
+                if (state.updatedImages[index]) {
+                    state.updatedImages[index] = {
+                        ...state.updatedImages[index],
+                        deleted: true,
+                        file: null  // Eliminamos el archivo si existía
+                    };
+                    detectVisualAidsChanges();
+                }
+            }
+        }
+
+        async function guardarCambios() {
+            // Preparar datos de atributos si hay cambios
+            let atributosData = null;
+            if (state.changes.hasAttributeChanges) {
+                atributosData = Array.from(document.querySelectorAll("input[data-id], textarea[data-id]"))
+                    .reduce((acc, input) => {
+                        const id = parseInt(input.getAttribute("data-id"));
+                        const isNew = input.getAttribute("data-new") === "true";
+                        const field = input.getAttribute("data-field");
+
+                        if (isNew) {
+                            // Agrupar los campos del nuevo atributo
+                            if (!acc.find(a => a.id_atributo === id)) {
+                                acc.push({
+                                    id_punto: id_punto,
+                                    id_atributo: id,
+                                    titulo: "",
+                                    valor: "",
+                                    isNew: true
+                                });
+                            }
+                            const atributo = acc.find(a => a.id_atributo === id);
+                            atributo[field] = input.value;
+                        } else {
+                            // Lógica existente para atributos modificados
+                            const originalAtributo = state.originalData.atributos.find(a => a.id_atributo === id);
+                            if (input.value !== originalAtributo[field]) {
+                                let atributo = acc.find(a => a.id_atributo === id);
+                                if (!atributo) {
+                                    atributo = {
+                                        id_punto: id_punto,
+                                        id_atributo: id,
+                                        titulo: originalAtributo.titulo,
+                                        valor: originalAtributo.valor
+                                    };
+                                    acc.push(atributo);
+                                }
+                                atributo[field] = input.value;
+                            }
+                        }
+
+                        return acc;
+                    }, []);
+
+                // Agregar los atributos eliminados al conjunto de datos
+                if (state.deletedAttributes && state.deletedAttributes.length > 0) {
+                    atributosData = atributosData.concat(state.deletedAttributes);
+                }
+            }
+
+            // Preparar datos de imágenes si hay cambios
+            let imagenesData = []; // Inicializar como array vacío
+            if (state.changes.hasNewOrReplacedImages || state.changes.hasDeletedOnlyImages) {
+                imagenesData = state.updatedImages.filter(img => img.isNew || img.replaced || img.deleted);
+            }
+
+            // Enviar todos los datos a la ruta unificada
+            enviarDatosUnificados(atributosData, imagenesData);
+
+            state.saveButton.disabled = true;
+        }
+
+        async function enviarDatosUnificados(atributos, imagenes) {
+            const formData = new FormData();
+
+            formData.append('id_punto', id_punto);
+
+            // Agregar atributos modificados si existen
+            if (atributos) {
+                formData.append('atributos', JSON.stringify(atributos));
+            }
+
+            // Preparar información de imágenes sin los archivos
+            const imagenesInfo = imagenes.map(img => ({
+                id_ayudaVisual: img.id_ayudaVisual,
+                imagen: img.imagen,
+                isNew: img.isNew,
+                replaced: img.replaced,
+                deleted: img.deleted
+            }));
+            
+            formData.append('imagenesInfo', JSON.stringify(imagenesInfo));
+
+            // Agregar archivos de imágenes nuevas o reemplazadas
+            const archivos = [];
+            imagenes.forEach(img => {
+                if ((img.isNew || img.replaced) && img.file) {
+                    formData.append('imagenes', img.file);
+                    archivos.push({
+                        nombre: img.imagen,
+                        tipo: img.file.type,
+                        tamaño: img.file.size
+                    });
+                }
+            });
+
+            // Log detallado de la estructura
+            console.log('Estructura completa para ruta unificada:', {
+                id_punto: id_punto,
+                atributosModificados: atributos ? atributos : 'No hay atributos modificados',
+                informacionImagenes: imagenesInfo,
+                archivosAdjuntos: archivos
+            });
+
+            // Enviar los datos a la ruta unificada
+            try {
+                const response = await fetch("/tpm/admChecklist/edit/attributeOrImagesUpload", {
+                    method: "POST",
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if(response.ok){
+                    alert('Atributo(s) actualizados correctamente');
+                    console.log("Atributos modificados:", result.message);
+                    window.location.href = `/tpm/admChecklist/${id_equipo}`;
+                }
+                
+                
+            } catch (error) {
+                console.error("Error al modificar los atributos:", error);
+            }
+        }
+
+    </script>
+</body>
+</html>

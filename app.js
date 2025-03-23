@@ -8,9 +8,14 @@ const tpm_routes = require("./routes/tpm_routes");
 
 const app = express();
 const PORT = 3000;
-
+//const BASE_RESOURCE_PATH = 'C:\\Users\\GHH1SLP\\Desktop\\tpm-server-resources';
+const BASE_RESOURCE_PATH = 'C:\\Users\\arman\\Desktop\\tpm-server-resources';
 // Servir archivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
+// Middleware para servir archivos estáticos de diferentes subcarpetas
+app.use('/resources/opl', express.static(path.join(BASE_RESOURCE_PATH, 'opl-images')));
+app.use('/resources/ayudas-visuales', express.static(path.join(BASE_RESOURCE_PATH, 'ayudas-visuales')));
+app.use('/resources/headers', express.static(path.join(BASE_RESOURCE_PATH, 'headers-img')));
 
 //app.use('/uploads', express.static(path.join(__dirname, 'public')));
 // Configuración de sesión

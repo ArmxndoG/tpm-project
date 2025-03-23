@@ -1,0 +1,436 @@
+/* Contenedor principal */
+.image-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+/* Contenedor del carrusel de imágenes */
+/* Estilos para el contenedor del carrusel */
+.carousel-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    overflow: hidden;
+}
+/* Estilos para los botones de navegación */
+.image-controls {
+    position: absolute;
+    top: 50%;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    transform: translateY(-50%);
+    z-index: 5;
+}
+
+/* Estilos para los botones de acción sobre la imagen */
+.image-actions {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-wrapper:hover .image-actions {
+    opacity: 1;
+}
+
+
+ .image-container img {
+  max-height: 280px;
+  max-width: 90%;
+  object-fit: contain;
+  position: absolute;
+  transition: opacity 0.3s ease;
+}
+
+/* Estilos para el wrapper de imagen */
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.image-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+
+/* Estilos para los botones */
+.action-button {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.action-button:hover {
+    transform: scale(1.1);
+}
+
+.action-button img {
+    width: 20px;
+    height: 20px;
+}
+
+.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nav-button {
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin: 0 10px;
+}
+
+.nav-button:hover {
+  background: #f0f0f0;
+}
+
+
+.action-button {
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10b981;
+  z-index: 31;
+}
+
+.action-button:hover {
+  background: #f0f0f0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+th {
+  background: #f5f5f5;
+  padding: 12px;
+  text-align: left;
+}
+
+td {
+  padding: 12px;
+  border-top: 1px solid #eee;
+}
+
+td:first-child {
+  background: #f9f9f9;
+  width: 200px;
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: #00B0F0;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+#saveButton {
+  background: #007BC0;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  float: right;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#saveButton:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+#saveButton:not(:disabled):hover {
+  background: #059669;
+}
+
+.delete-button {
+  color: #ef4444;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.delete-button:hover {
+  background: #fee2e2;
+}
+textarea {
+  width: 100%;
+  height: 36px; /* Altura inicial fija */
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-sizing: border-box;
+  resize: none; /* Desactivamos el resize manual */
+  overflow-y: hidden; /* Ocultamos el scroll */
+  font-family: inherit;
+  font-size: inherit;
+  line-height: 1.5;
+  transition: height 0.2s ease;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: #00B0F0;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+}
+table td {
+  vertical-align: top; /* Alinea el contenido de las celdas hacia arriba */
+}
+
+.center-controls {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 8px;
+    z-index: 20;
+}
+
+.control-button {
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-button img {
+    width: 20px;
+    height: 20px;
+}
+
+.delete-button img {
+    width: 20px;
+    height: 20px;
+}
+.add-image-container {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    z-index: 30; /* Valor mayor que otros z-index para asegurar que esté por encima */
+}
+
+/* Estilos para el botón de añadir */
+.add-image-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 10;
+}
+
+.add-image-button:hover {
+    background-color: #45a049;
+}
+/* Estados de visibilidad */
+.visible {
+    display: block;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Ajustes al contenedor principal */
+.image-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+/* Contenedor del carrusel */
+.carousel-container {
+    position: relative;
+    width: 100%;
+    height: 400px;
+    overflow: hidden;
+}
+
+/* Wrapper de imagen y sus elementos */
+.image-wrapper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.image-wrapper img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* Capa de overlay para el hover */
+.image-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.image-wrapper:hover::before {
+    opacity: 1;
+}
+
+/* Botones de acción */
+.image-actions {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    gap: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 10;
+}
+
+.image-wrapper:hover .image-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.action-button {
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+}
+
+.action-button:hover {
+    transform: scale(1.1);
+    background: #f0f0f0;
+}
+
+.action-button img {
+    width: 20px;
+    height: 20px;
+    position: static;
+    transform: none;
+}
+
+/* Botón de añadir */
+.add-image-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 20;
+}
+
+/* Estados de visibilidad */
+.visible {
+    display: flex;
+}
+
+.hidden {
+    display: none;
+}
+/* Agregar estos estilos a tu archivo CSS */
+.add-attribute-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid #007bff;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin: 10px auto;
+  transition: all 0.3s ease;
+}
+
+.add-attribute-button:hover {
+  background-color: #007bff;
+}
+
+.add-attribute-button:hover img {
+  filter: brightness(0) invert(1);
+}
+
+.add-attribute-button img {
+  width: 24px;
+  height: 24px;
+}
+
+tfoot td {
+  text-align: center;
+  padding: 10px;
+}
