@@ -31,7 +31,22 @@ const FormularioTPM = {
       throw err;
     }
   },
-  
+
+  hasChecklistThisWeek: async (id_equipo) => {
+    const query = `
+        SELECT COUNT(*) AS count 
+        FROM checklist 
+        WHERE id_equipo = ? AND confirmacion = 1 
+        AND WEEK(fecha, 1) = WEEK(CURDATE(), 1)
+        AND YEAR(fecha) = YEAR(CURDATE())
+    `;
+    try {
+        const [results] = await db.query(query, [id_equipo]);
+        return results[0].count > 0; // Retorna true si ya hay un checklist en la semana actual
+    } catch (err) {
+        throw err;
+    }
+},
   getHeaderByEquipment: async (id_equipo) =>{
 
     try{

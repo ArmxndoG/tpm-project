@@ -7,6 +7,16 @@ const mostrarPuntosTPM = async (req, res, viewName) => {
     const { id_cuarto, id_equipo } = req.params; // Suponiendo que estos vienen en la URL
 
     try {
+        // Verificar si ya existe un checklist para este equipo en la semana actual
+        const checklistExistente = await puntostpmModel.hasChecklistThisWeek(id_equipo);
+        
+        if (checklistExistente) {
+            // Si ya existe un checklist, devolver una respuesta JSON indicando el error
+            return res.status(409).json({ 
+                error: true, 
+                message: 'Ya se ha realizado el TPM de este equipo esta semana.'
+            });
+        }
         const atributos = await puntostpmModel.getAtributos(id_equipo);
         const ayuda_visual = await puntostpmModel.getAyudaVisual(id_equipo);
         const orden_puntos = await puntostpmModel.getOrdenPuntos(id_equipo);
@@ -84,6 +94,29 @@ const mostrarPuntosTPM = async (req, res, viewName) => {
         res.status(500).send('Error interno del servidor.');
     }
 };
+
+const verifyChecklist = async (req, res) => {
+    const { id_cuarto, id_equipo } = req.params;
+    
+    try {
+        // Verificar si ya existe un checklist
+        const checklistExistente = await puntostpmModel.hasChecklistThisWeek(id_equipo);
+        
+        if (checklistExistente) {
+            return res.status(409).json({ 
+                error: true, 
+                message: 'Ya se ha realizado el TPM de este equipo esta semana.'
+            });
+        }
+        
+        // Si no existe, responder con éxito
+        res.json({ error: false, message: 'No hay checklist existente para este equipo en la semana actual.' });
+    } catch (error) {
+        console.error('Error al verificar el checklist:', error);
+        res.status(500).json({ error: true, message: 'Error interno del servidor.' });
+    }
+};
+
 
 /* Método para que obtiene los puntos asociados al equipo y su respectiva imagen de header*/
 const getPointsByEquipment = async (req, res) => {
@@ -455,6 +488,7 @@ module.exports = {
     unifiedController,
     addImgHeader,
     replaceImgHeader,
-    addEmptyPoint
+    addEmptyPoint,
+    verifyChecklist
 
 };

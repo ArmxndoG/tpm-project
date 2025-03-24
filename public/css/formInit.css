@@ -1,0 +1,223 @@
+body {
+            
+    padding-top: calc(50px + 25px); /* Altura de la barra + contenido del header */
+    background-color: #F2F2F2;
+
+}
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.form-wrapper {
+    background-color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    width: 100%;
+    max-width: 24rem;
+}
+
+.form-wrapper h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: medium;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #d2d6dc;
+    border-radius: 0.375rem;
+    outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
+}
+
+.buttons {
+    display: flex;
+    justify-content: space-between;
+}
+
+.buttons button {
+    background-color: #0079bf;
+    color: white;
+    padding: 0.5rem 1rem;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.buttons button:hover {
+    background-color: #004875;
+}
+
+.buttons button.secondary {
+    background-color: #ffffff;
+    color: #0079bf;
+    border: 1px solid #0079bf;
+}
+
+.buttons button.secondary:hover {
+    background-color: #d1e4ff;
+}
+
+.buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.indicator {
+    display: flex;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.indicator div {
+    width: 1rem;
+    height: 1rem;
+    background-color: #d1d5db;
+    border-radius: 50%;
+    margin: 0 0.5rem;
+}
+
+.indicator div.active {
+    background-color: #00B0F0;
+}
+.hidden {
+    display: none;
+}
+/* Estilos para los modales */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    position: relative;
+    background-color: #fff;
+    width: 90%;
+    max-width: 600px;
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    border-top: 4px solid #ffeb3b; /* Amarillo para declaración */
+    border-bottom: 1px solid black;
+}
+
+.modal-finalizado .modal-header {
+    border-top: 4px solid #00c853; /* Verde para finalizado */
+
+}
+.modal-finalizado .modal-footer {
+    justify-content: flex-end; /* Alinea el botón a la derecha */
+}
+
+.modal-icon {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.modal-icon img {
+    width: 25px;
+    height: 25px;
+}
+
+.modal-header h2 {
+    flex: 1;
+    margin: 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: black; /* Color del texto */
+}
+
+.close-modal {
+    cursor: pointer;
+}
+
+.close-modal img {
+    width: 20px;
+    height: 20px;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body h3 {
+    margin-top: 0;
+    font-size: 22px;
+    font-weight: bold;
+}
+
+.info-detail {
+    margin: 10px 0;
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 15px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-primario {
+    background-color: #0277bd;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-secundario {
+    background-color: white;
+    color: #0277bd;
+    border: 1px solid #0277bd;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.btn-primario:hover {
+    background-color: #01579b;
+}
+
+.btn-secundario:hover {
+    background-color: #f5f5f5;
+}

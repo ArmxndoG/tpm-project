@@ -12,7 +12,7 @@ const { getAllRooms, getEquipmentByRoomId, insertarNuevoEquipo, getAllEquipments
 
 //Funciones del controlador formulariotpm
 const { mostrarPuntosTPM, subirDatosTPM, getPointsByEquipment, 
-    changeOrder, addEmptyPoint, getDetailsByPoint, unifiedController, addImgHeader, replaceImgHeader } = require("../controllers/formulariotpm_controller");
+    changeOrder, addEmptyPoint, getDetailsByPoint, unifiedController, addImgHeader, replaceImgHeader, verifyChecklist } = require("../controllers/formulariotpm_controller");
 
 
 
@@ -48,7 +48,8 @@ router.get("/home", (req, res) => {
 router.get("/formInit", renderWithView("../views/pages/user/formInit")); //Formulario inicial del tpm
 router.get("/rooms/:roomId/equipment", getEquipmentByRoomId); //Endpoint para obtener los equipos asociados al cuarto
 
-router.get("/checklist/:id_cuarto/:id_equipo", renderWithView2("../views/pages/user/checklist_tpm"));//Enpoint para mostrar los puntos del checklist
+router.get("/checklist/:id_cuarto/:id_equipo", renderWithView2("../views/pages/user/checklist_tpm"));//Enpoint para mostrar el checklist asociado al equipo
+router.get('/verificar-checklist/:id_cuarto/:id_equipo', verifyChecklist);//Enpoint para verificar si el checklist ya tiene un registro semanal
 router.post('/checklist/data-upload', uploadOPL.any(), subirDatosTPM);//Enpoint para subir los datos del checklist
 
 /**********************************

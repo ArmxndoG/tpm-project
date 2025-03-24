@@ -4,121 +4,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/formInit.css"/>
     <title>Realizar TPM</title>
-    <style>
 
-        body {
-          
-          padding-top: calc(50px + 25px); /* Altura de la barra + contenido del header */
-          background-color: #F2F2F2;
-          
-        }
-        .container {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          height: 100vh;
-        }
-    
-        .form-wrapper {
-          background-color: white;
-          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-          border-radius: 0.5rem;
-          padding: 1.5rem;
-          width: 100%;
-          max-width: 24rem;
-        }
-    
-        .form-wrapper h2 {
-          font-size: 1.5rem;
-          font-weight: bold;
-          margin-bottom: 1.5rem;
-        }
-    
-        .form-group {
-          margin-bottom: 1rem;
-        }
-    
-        .form-group label {
-          display: block;
-          font-weight: medium;
-          margin-bottom: 0.5rem;
-        }
-    
-        .form-group input,
-        .form-group select {
-          width: 100%;
-          padding: 0.5rem 0.75rem;
-          border: 1px solid #d2d6dc;
-          border-radius: 0.375rem;
-          outline: none;
-        }
-    
-        .form-group input:focus,
-        .form-group select:focus {
-          border-color: #3b82f6;
-          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5);
-        }
-    
-        .buttons {
-          display: flex;
-          justify-content: space-between;
-        }
-    
-        .buttons button {
-          background-color: #0079bf;
-          color: white;
-          padding: 0.5rem 1rem;
-          border: none;
-          cursor: pointer;
-          transition: background-color 0.3s ease;
-        }
-    
-        .buttons button:hover {
-          background-color: #004875;
-        }
-    
-        .buttons button.secondary {
-          background-color: #ffffff;
-          color: #0079bf;
-          border: 1px solid #0079bf;
-        }
-    
-        .buttons button.secondary:hover {
-          background-color: #d1e4ff;
-        }
-    
-        .buttons button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-    
-        .indicator {
-          display: flex;
-          justify-content: center;
-          margin-top: 1rem;
-        }
-    
-        .indicator div {
-          width: 1rem;
-          height: 1rem;
-          background-color: #d1d5db;
-          border-radius: 50%;
-          margin: 0 0.5rem;
-        }
-    
-        .indicator div.active {
-          background-color: #00B0F0;
-        }
-        .hidden {
-          display: none;
-        }
-      </style>
 </head>
 <body>
     <div class="container">
       <div class="form-wrapper">
         <h2>Realizar TPM</h2>
+        
   
         <div id="form-container">
           <!-- First Form -->
@@ -151,15 +45,15 @@
           <!-- Second Form -->
           <div id="second-form" class="space-y-4 hidden">
             <div class="form-group">
-              <label for="username">Nombre de usuario</label>
+              <label for="username">Nombre de usuario (* SSO)</label>
               <input type="text" id="username" value="ghh1slp">
             </div>
             <div class="form-group">
-              <label for="nombre">Nombre</label>
+              <label for="nombre">Nombre (* SSO)</label>
               <input type="text" id="nombre" value="Hugo Armando">
             </div>
             <div class="form-group">
-              <label for="apellido">Apellido</label>
+              <label for="apellido">Apellido (* SSO)</label>
               <input type="text" id="apellido" value="García Hernández">
             </div>
             <div class="buttons">
@@ -176,34 +70,88 @@
       </div>
     </div>
 
+    <!-- Modal de Error - Checklist ya realizado -->
+    <div id="modalErrorChecklist" class="modal">
+      <div class="modal-content modal-error">
+        <div class="modal-header">
+          <div class="modal-icon">
+              <img src="/icons/alert-error.svg" alt="Error">
+          </div>
+          <h2>Error - No se puede realizar el TPM</h2>
+          <span class="close-modal">
+              <img src="/icons/close.svg" alt="Cerrar">
+          </span>
+        </div>
+        <div class="modal-body">
+          <h3>Ya se ha realizado el TPM de este equipo</h3>
+          <p>No se puede realizar el TPM de este equipo debido a que ya se tiene registro de un TPM realizado en esta semana.</p>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-cerrar-error" class="btn-secundario">Cerrar</button>
+          <button id="btn-aceptar-error" class="btn-primario">Aceptar</button>
+        </div>
+      </div>
+  </div>
+
     <!-- Script para mandar el id_cuarto, id_equipo a la ruta mapeada en el controlador 'mostrarPuntosTPM'
      que obtiene los puntos del tpm asociados al equipo seleccionado -->
     <script>
-          document.getElementById('initTPMBtn').addEventListener('click', (event) => {
+         document.getElementById('initTPMBtn').addEventListener('click', (event) => {
           event.preventDefault(); // Evitar recargar la página al hacer clic
-  
+
           // Capturar los datos del formulario
           const id_cuarto = document.getElementById('cuarto-selection').value;
           const id_equipo = document.getElementById('equipo-selection').value;
           const username = document.getElementById('username').value;
           const nombre = document.getElementById('nombre').value;
           const apellido = document.getElementById('apellido').value;
-  
-          console.log("id_cuarto: ", id_cuarto);
-          console.log("id_equipo: ", id_equipo);
-          console.log("username: ", username);
-          console.log("nombre: ", nombre, "apellido: ", apellido);
-          
+
           // Validación de campos vacíos
           if (!id_cuarto || !id_equipo || !username || !nombre || !apellido) {
               alert('Por favor, complete todos los campos.');
               return;
           }
-  
-          // Redirigir al usuario a la nueva ruta con los parámetros en la URL
-          window.location.href = `/tpm/checklist/${id_cuarto}/${id_equipo}`;
+
+          // Realizar una solicitud al servidor para verificar si ya se ha realizado el checklist de este equipo en la semana actual
+          fetch(`/tpm/verificar-checklist/${id_cuarto}/${id_equipo}`, {
+              method: 'GET',
+              headers: {
+                  'Content-Type': 'application/json'
+              }
+          })
+          .then(response => {
+              // Siempre interpretar como JSON, independientemente del código de estado
+              return response.json().then(data => {
+                  // Añadir el status a los datos para poder verificarlo después
+                  return { ...data, status: response.status };
+              });
+          })
+          .then(data => {
+              if (data.error || data.status === 409) {
+                  // Mostrar el modal de error
+                  const modal = document.getElementById('modalErrorChecklist');
+                  modal.style.display = 'flex';
+                  return;
+              }
+              
+              // Si no hay error, redirigir a la vista de checklist
+              window.location.href = `/tpm/checklist/${id_cuarto}/${id_equipo}`;
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Hubo un error al verificar el checklist. Por favor, inténtelo de nuevo.');
+          });
       });
+
+      // Agregar event listeners para cerrar el modal
+      document.querySelectorAll('#btn-cerrar-error, #btn-aceptar-error, .close-modal').forEach(element => {
+          element.addEventListener('click', () => {
+              document.getElementById('modalErrorChecklist').style.display = 'none';
+          });
+      });
+
   </script>
+
 
 
     <!--Script para desplegar dinamicamente los equipos dependiendo del cuarto seleccionado -->
