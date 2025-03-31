@@ -1,9 +1,23 @@
 const Room = require("../models/rooms_model");
 
 
+const getOpl = async(req, res) => {
+    try{
+        const rooms = await Room.getAllRooms(); //llamamos al método del modelo Room (Consulta de los cuartos)
+        res.render('pages/admin/admOPL', { 
+            rooms: rooms, 
+            oplFormateados: []
+        });
+
+    }catch (err){
+        console.error("Error al obtenre los cuartos",err);
+        res.status(500).json({message: "Error al obtener los cuartos"})
+    }
+};
 const getAllRooms = async(req, res, next,viewName) => {
     try{
         const rooms = await Room.getAllRooms(); //llamamos al método del modelo Room (Consulta de los cuartos)
+        console.log("Cuartos disponibles: ",rooms);
         res.render(viewName, { rooms }); // Renderizamos la vista especificada con los datoss
 
     }catch (err){
@@ -11,6 +25,19 @@ const getAllRooms = async(req, res, next,viewName) => {
         res.status(500).json({message: "Error al obtener los cuartos"})
     }
 };
+
+const getRooms = async(req, res) => {
+    try{
+        const rooms = await Room.getAllRooms(); //llamamos al método del modelo Room (Consulta de los cuartos)
+        console.log("Rooms obtenidas desde la api: ",rooms);
+        res.json(rooms);
+
+    }catch (err){
+        console.error("Error al obtenre los cuartos",err);
+        res.status(500).json({message: "Error al obtener los cuartos"})
+    }
+};
+
 
 const getAllEquipments = async(req, res, next,viewName) => {
     try{
@@ -98,6 +125,7 @@ const deleteEquipment = async (req, res) => {
     }
 };
 
+
 const modLocalizacion = async(req,res) =>{
     const {id_equipo, id_cuarto} = req.body;
 
@@ -109,7 +137,9 @@ const modLocalizacion = async(req,res) =>{
         console.error("Error al modificar la localización del equipo", err);
         res.status(500).json({ message: "Error al modificar la localización del equipo" });
     }
-}
+};
+
+
 
 //Aquí se exportan directamente los métodos necesarios del controlador
 module.exports = {
@@ -120,4 +150,6 @@ module.exports = {
     getRoomByEquipmentId,
     modLocalizacion,
     deleteEquipment,
+    getOpl,
+    getRooms
 };

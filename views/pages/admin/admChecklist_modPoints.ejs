@@ -131,7 +131,31 @@
                     headerImageInput.click();
                 });
             });
-            
+            /*if (addNewPointBtn) {
+                addNewPointBtn.addEventListener('click', () => {
+                    // Llamar a la API para crear un punto vacío
+                    fetch('/tpm/admChecklist/addEmptyPoint', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json' 
+                        },
+                        body: JSON.stringify({ id_equipo: id_equipo })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.puntoId) {
+                            // Redirigir a la página de edición del nuevo punto
+                            window.location.href = `/tpm/admChecklist/edit/${data.puntoId}`;
+                        } else {
+                            alert('Error al crear nuevo punto');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Ocurrió un error al crear el punto');
+                    });
+                });
+            }*/
             if (addNewPointBtn) {
                 addNewPointBtn.addEventListener('click', () => {
                     // Llamar a la API para crear un punto vacío

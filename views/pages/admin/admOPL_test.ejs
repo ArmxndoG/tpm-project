@@ -1,0 +1,323 @@
+<%- include('../../layouts/header') %> <!-- Incluye el header -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Checklist</title>
+    <style>
+
+        body {
+          
+          padding-top: calc(50px + 25px); /* Altura de la barra + contenido del header */
+          background-color: #F2F2F2;
+          
+        }
+        .container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          height: 100vh;
+        }
+  
+
+        /* Estilos para la tabla de resultados */
+        .opl-results {
+            margin-top: 20px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        .badge-danger {
+            background-color: #ff4d4d;
+            color: white;
+        }
+        .badge-success {
+            background-color: #4CAF50;
+            color: white;
+        }
+        /* Estilos adicionales */
+      .opl-results-container {
+          margin-top: 20px;
+          padding: 15px;
+          background: white;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+
+      .loading-indicator {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 20px;
+      }
+
+      .spinner {
+          border: 4px solid rgba(0, 0, 0, 0.1);
+          border-radius: 50%;
+          border-top: 4px solid #3498db;
+          width: 30px;
+          height: 30px;
+          animation: spin 1s linear infinite;
+          margin-right: 10px;
+      }
+
+      @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+
+      .alert {
+          padding: 10px 15px;
+          border-radius: 4px;
+          margin-bottom: 15px;
+      }
+
+      .alert-danger {
+          background-color: #f8d7da;
+          color: #721c24;
+          border: 1px solid #f5c6cb;
+      }
+
+      .alert-info {
+          background-color: #d1ecf1;
+          color: #0c5460;
+          border: 1px solid #bee5eb;
+      }
+
+      .thumbnail {
+          cursor: pointer;
+          margin-right: 5px;
+          transition: transform 0.2s;
+      }
+
+      .thumbnail:hover {
+          transform: scale(1.1);
+      }
+      </style>
+</head>
+<body>
+    <div class="container">
+        <div class="form-wrapper">
+            <h2>Revisión de OPL</h2>
+    
+            <div id="form-container">
+                <!-- First Form -->
+                <div id="first-form" class="space-y-4">
+                    <div class="form-group">
+                        <label for="cuarto-selection">Seleccione cuarto</label>
+                        <select id="cuarto-selection">
+                            
+                            <% if (rooms && rooms.length > 0) { %>
+                            <% rooms.forEach(room => { %>
+                                <option value="<%= room.id_cuarto %>"><%= room.nombre_cuarto %></option>
+                            <% }); %>
+                            <% } else { %>
+                            <option value="">No hay cuartos disponibles</option>
+                            <% } %>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="equipo-selection">Seleccione equipo</label>
+                        <select id="equipo-selection">
+                            
+                        </select>
+                    </div>
+                    <div class="form-group">
+                      <label for="week-selection">Filtrar por semana</label>
+                      <select id="week-selection" class="form-control">
+                          <option value="all">Todas las semanas</option>
+                          <% for(let week = 1; week <= 52; week++) { %>
+                              <option value="<%= week %>"><%= week %></option>
+                          <% } %>
+                      </select>
+                  </div>
+
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      // Función global para mostrar imágenes en pantalla completa
+      window.showFullImage = function(src) {
+          window.open(src, '_blank', 'width=800,height=600');
+      };
+      
+      // Función principal que se ejecuta al cargar la página
+      
+      document.addEventListener('DOMContentLoaded', async function() {
+
+          // Elementos del DOM
+          const cuartoSelect = document.getElementById('cuarto-selection');
+          const equipoSelect = document.getElementById('equipo-selection');
+          const weekSelect = document.getElementById('week-selection');
+          let allOpls = []; // Variable para almacenar todos los OPLs
+          
+          // Crear contenedor para resultados si no existe
+          let resultsContainer = document.getElementById('opls-results-container');
+          if (!resultsContainer) {
+              resultsContainer = document.createElement('div');
+              resultsContainer.id = 'opls-results-container';
+              resultsContainer.className = 'opl-results-container mt-4';
+              document.querySelector('.form-wrapper').appendChild(resultsContainer);
+          }
+         // Función para filtrar OPLs por semana
+        function filterOplsByWeek(selectedWeek) {
+            // Seleccionar todos los tr con data-week-iso en el contexto actual
+            const oplRows = document.querySelectorAll('.opl-results tbody tr[data-week-iso]');
+            
+            if (oplRows.length === 0) return;
+
+            // Si se selecciona "Todas las semanas"
+            if (selectedWeek === 'all') {
+                oplRows.forEach(row => {
+                    row.style.display = '';
+                });
+                return;
+            }
+
+            // Convertir selectedWeek a número
+            const weekToFilter = parseInt(selectedWeek);
+
+            oplRows.forEach(row => {
+                // Obtener la semana del atributo data-week-iso
+                const rowWeek = parseInt(row.getAttribute('data-week-iso'));
+                
+                // Comparar la semana del OPL con la semana seleccionada
+                if (rowWeek === weekToFilter) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+        // Evento para filtrar por semana
+        weekSelect.addEventListener('change', function() {
+            console.log("Semana: ",this.value);
+            filterOplsByWeek(this.value);
+        });
+
+      
+          // Función para cargar los OPLs de un equipo específico
+        async function cargarOPLs(id_equipo) {
+
+            try {
+                // Mostrar indicador de carga
+                resultsContainer.innerHTML = `
+                    <div class="loading-indicator">
+                        <div class="spinner"></div>
+                        <p>Cargando OPLs para equipo ${id_equipo}...</p>
+                    </div>
+                `;
+                
+                // Hacer la petición al servidor
+                const response = await fetch(`/tpm/admOPL/${id_equipo}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(`Error ${response.status}: ${errorData}`);
+                }
+    
+                // Insertar el HTML recibido
+                const htmlContent = await response.text();
+                resultsContainer.innerHTML = htmlContent;
+
+                // Aplicar filtro inicial después de cargar el contenido
+                filterOplsByWeek(weekSelect.value);
+
+                
+                
+            } catch (error) {
+                console.error('Error al cargar OPLs:',error);
+                  // Mostrar mensaje de error
+                  resultsContainer.innerHTML = `
+                      <div class="alert alert-danger">
+                          <strong>Error al cargar OPLs:</strong> ${error.message}
+                      </div>
+                  `;
+            }
+        }
+        
+        
+
+      
+          // Función para cargar los equipos de un cuarto y sus OPLs
+          async function fetchAndPopulateEquipment(roomId) {
+              const equipmentSelect = document.getElementById('equipo-selection');
+              equipmentSelect.innerHTML = '<option value="">Cargando equipos...</option>';
+              equipmentSelect.disabled = true;
+              
+              try {
+                  // Obtener equipos del cuarto seleccionado
+                  const response = await fetch(`/tpm/rooms/${roomId}/equipment`);
+                  if (!response.ok) throw new Error('Error al obtener los equipos');
+                  
+                  const equipment = await response.json();
+                  equipmentSelect.innerHTML = '';
+                  
+                  if (equipment.length > 0) {
+                      // Llenar el select con los equipos
+                      equipment.forEach(item => {
+                          const option = document.createElement('option');
+                          option.value = item.id_equipo;
+                          option.textContent = item.nombre_equipo;
+                          equipmentSelect.appendChild(option);
+                      });
+                      equipmentSelect.disabled = false;
+                      
+                      // Cargar automáticamente los OPLs del primer equipo
+                      const primerEquipoId = equipment[0].id_equipo;
+                      await cargarOPLs(primerEquipoId);
+                  } else {
+                      equipmentSelect.innerHTML = '<option value="">No hay equipos disponibles</option>';
+                      resultsContainer.innerHTML = '<div class="alert alert-info">No hay equipos en este cuarto</div>';
+                  }
+              } catch (err) {
+                  console.error('Error al cargar equipos:', err.message);
+                  equipmentSelect.innerHTML = '<option value="">Error al cargar equipos</option>';
+                  resultsContainer.innerHTML = `<div class="alert alert-danger">Error: ${err.message}</div>`;
+              }
+          }
+      
+          // Evento para cuando cambia la selección de equipo
+          equipoSelect.addEventListener('change', function() {
+              const id_equipo = this.value;
+              if (id_equipo) {
+                  cargarOPLs(id_equipo);
+              } else {
+                  resultsContainer.innerHTML = `
+                      <div class="alert alert-info">
+                          Seleccione un equipo para ver los OPLs
+                      </div>
+                  `;
+              }
+          });
+      
+          // Evento para cuando cambia la selección de cuarto
+          cuartoSelect.addEventListener('change', async function() {
+              const roomId = this.value;
+              await fetchAndPopulateEquipment(roomId);
+          });
+      
+          // Cargar los equipos del primer cuarto al iniciar
+          await fetchAndPopulateEquipment(cuartoSelect.value);
+      });
+      </script>
+  </body>
+</html>

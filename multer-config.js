@@ -3,8 +3,8 @@ const path = require('path');
 const fs = require('fs');
 
 // Carpeta base para recursos
-//const BASE_RESOURCE_PATH = 'C:\\Users\\GHH1SLP\\Desktop\\tpm-server-resources';
 const BASE_RESOURCE_PATH = 'C:\\Users\\arman\\Desktop\\tpm-server-resources';
+
 
 
 // Función para crear el storage de Multer con destino dinámico

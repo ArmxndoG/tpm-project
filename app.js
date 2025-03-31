@@ -8,8 +8,8 @@ const tpm_routes = require("./routes/tpm_routes");
 
 const app = express();
 const PORT = 3000;
-//const BASE_RESOURCE_PATH = 'C:\\Users\\GHH1SLP\\Desktop\\tpm-server-resources';
 const BASE_RESOURCE_PATH = 'C:\\Users\\arman\\Desktop\\tpm-server-resources';
+
 // Servir archivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
 // Middleware para servir archivos estáticos de diferentes subcarpetas

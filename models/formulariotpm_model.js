@@ -31,7 +31,6 @@ const FormularioTPM = {
       throw err;
     }
   },
-
   hasChecklistThisWeek: async (id_equipo) => {
     const query = `
         SELECT COUNT(*) AS count 
@@ -46,7 +45,8 @@ const FormularioTPM = {
     } catch (err) {
         throw err;
     }
-},
+  },
+  
   getHeaderByEquipment: async (id_equipo) =>{
 
     try{
@@ -167,86 +167,85 @@ const FormularioTPM = {
     }
   },
 
-    //Obtenemos el orden de los puntos
-    getOrdenPuntos: async (id_equipo) =>{
+  //Obtenemos el orden de los puntos
+  getOrdenPuntos: async (id_equipo) =>{
 
-      try{
-          const query = `
-            SELECT 
-                p.id_punto,
-                p.orden AS orden_punto
-            FROM 
-                puntos p
-            WHERE 
-                p.id_equipo = ? and p.activo = 1
-            ORDER BY 
-                p.orden ASC;
-          `;
-          const values = [id_equipo];
-          const [rows] = await db.execute(query, values);
-          console.log("Orden de los puntos: ",rows);
-          return rows;
-
-
-      } catch (err){
-        console.error('Error al obtener los puntos por equipo:', err);
-        throw err;
-      }
-    },
-
-    //Método para insertar un registro nuevo en la tabla 'tpm'
-    insertarTPM: async (id_equipo) => {
-      
-      try {
+    try{
         const query = `
-          INSERT INTO checklist (id_usuario, id_equipo, fecha, estado, confirmacion)
-          VALUES (?, ?, ?, ?, ?)
+          SELECT 
+              p.id_punto,
+              p.orden AS orden_punto
+          FROM 
+              puntos p
+          WHERE 
+              p.id_equipo = ? and p.activo = 1
+          ORDER BY 
+              p.orden ASC;
         `;
-        const fechaActual = new Date();
-        const fechaLocal = new Date(fechaActual.getTime() - (fechaActual.getTimezoneOffset() * 60000))
-          .toISOString()
-          .slice(0, 19)
-          .replace('T', ' ');
+        const values = [id_equipo];
+        const [rows] = await db.execute(query, values);
+        console.log("Orden de los puntos: ",rows);
+        return rows;
+
+
+    } catch (err){
+      console.error('Error al obtener los puntos por equipo:', err);
+      throw err;
+    }
+  },
+
+  //Método para insertar un registro nuevo en la tabla 'tpm'
+  insertarTPM: async (id_equipo) => {
+    
+    try {
+      const query = `
+        INSERT INTO checklist (id_usuario, id_equipo, fecha)
+        VALUES (?, ?, ?)
+      `;
+      const fechaActual = new Date();
+      const fechaLocal = new Date(fechaActual.getTime() - (fechaActual.getTimezoneOffset() * 60000))
+        .toISOString()
+        .slice(0, 19)
+        .replace('T', ' ');
+
+      const values = [
+        1, // Valor por defecto para id_usuario - (username del SSO en el futuro)
+        id_equipo, 
+        fechaLocal,
+        
+      ];
+      
+      const [result] = await db.query(query, values);
+      const id_tpm = result.insertId;
+      console.log('Registro insertado con ID:', id_tpm);
+      return id_tpm;//retornar el id del tpm 
+    } catch (error) {
+      console.error('Error al insertar datos en TPM:', error);
+    }
+  },
+  //Método para insertar los estados de los puntos en la tabla 'detalle_tpm'
+  insertarDetalleTPM: async (id_tpm_detalle, id_punto, status) => {
+      
+    try {
+        const query = `
+          INSERT INTO detalle_checklist (id_tpm, id_punto, status)
+          VALUES (?, ?, ?)
+        `;
 
         const values = [
-          1, // Valor por defecto para id_usuario - (username del SSO en el futuro)
-          id_equipo, 
-          fechaLocal,
-          'pendiente', 
-          0 
+          id_tpm_detalle, 
+          id_punto, 
+          status,
+          
         ];
         
-        const [result] = await db.query(query, values);
-        const id_tpm = result.insertId;
-        console.log('Registro insertado con ID:', id_tpm);
-        return id_tpm;//retornar el id del tpm 
-      } catch (error) {
-        console.error('Error al insertar datos en TPM:', error);
-      }
-  },
-    //Método para insertar los estados de los puntos en la tabla 'detalle_tpm'
-    insertarDetalleTPM: async (id_tpm_detalle, id_punto, status) => {
-        
-      try {
-          const query = `
-            INSERT INTO detalle_checklist (id_tpm, id_punto, status)
-            VALUES (?, ?, ?)
-          `;
+      const [result] = await db.query(query, values);
+      return result; // Devolver resultado si es necesario
 
-          const values = [
-            id_tpm_detalle, 
-            id_punto, 
-            status,
-            
-          ];
-          
-        const [result] = await db.query(query, values);
-        return result; // Devolver resultado si es necesario
-
-      } catch (error) {
-        console.error('Error al insertar datos en TPM:', error);
-        throw error; // Lanzar el error para manejarlo en el controlador
-      }
+    } catch (error) {
+      console.error('Error al insertar datos en TPM:', error);
+      throw error; // Lanzar el error para manejarlo en el controlador
+    }
   },
   //Método para insertar los comentarios y las imagenes de los puntos 'nok' en la tabla 'opl'
   insertarOPL: async (idDetalleTPM, comentario, fotografia) => {
@@ -260,16 +259,16 @@ const FormularioTPM = {
     return result;
   },
 
-    // Marcar el punto como inactivo en la base de datos
-    markInactive: async (idPunto) => {
-      const query = `UPDATE puntos SET activo = 0 WHERE id_punto = ?`;
-      try {
-          await db.query(query, [idPunto]);
-          console.log(`Punto ${idPunto} marcado como inactivo`);
-      } catch (error) {
-          console.error("Error al marcar el punto como inactivo:", error);
-          throw error;
-      }
+  // Marcar el punto como inactivo en la base de datos
+  markInactive: async (idPunto) => {
+    const query = `UPDATE puntos SET activo = 0 WHERE id_punto = ?`;
+    try {
+        await db.query(query, [idPunto]);
+        console.log(`Punto ${idPunto} marcado como inactivo`);
+    } catch (error) {
+        console.error("Error al marcar el punto como inactivo:", error);
+        throw error;
+    }
   },
 // Actualizar el orden de los puntos en la base de datos
   updateOrder: async (puntos) => {
@@ -307,21 +306,21 @@ const FormularioTPM = {
 
   },
 
-    updateAttributeModel: async (id_punto, id_atributo, titulo, valor) => {
-      
-      try {
-          // Actualizar el título en la tabla `atributos`
-          const queryTitulo = "UPDATE atributos SET titulo = ? WHERE id_atributo = ?";
-          await db.query(queryTitulo, [titulo, id_atributo]);
-
-          // Actualizar el valor en la tabla `puntos_atributos`
-          const queryValor = "UPDATE puntos_atributos SET valor = ? WHERE id_punto = ? AND id_atributo = ?";
-          await db.query(queryValor, [valor, id_punto,id_atributo]);
-
-      } catch (error) {
+  updateAttributeModel: async (id_punto, id_atributo, titulo, valor) => {
     
-          throw error;
-      }
+    try {
+        // Actualizar el título en la tabla `atributos`
+        const queryTitulo = "UPDATE atributos SET titulo = ? WHERE id_atributo = ?";
+        await db.query(queryTitulo, [titulo, id_atributo]);
+
+        // Actualizar el valor en la tabla `puntos_atributos`
+        const queryValor = "UPDATE puntos_atributos SET valor = ? WHERE id_punto = ? AND id_atributo = ?";
+        await db.query(queryValor, [valor, id_punto,id_atributo]);
+
+    } catch (error) {
+  
+        throw error;
+    }
   },
 
 
@@ -340,24 +339,39 @@ const FormularioTPM = {
         console.error('Error en insertAttributeModel:', error);
         throw error;
     }
-},
+  },
 
-/**
- * Inserta una nueva relación punto-atributo en la tabla puntos_atributos
- * @param {Object} puntoAtributoData - Datos de la relación punto-atributo
- * @returns {Promise<Object>} La relación insertada
- */
-insertPuntoAttributeModel: async (puntoAtributoData) => {
+  /**
+   * Inserta una nueva relación punto-atributo en la tabla puntos_atributos
+   * @param {Object} puntoAtributoData - Datos de la relación punto-atributo
+   * @returns {Promise<Object>} La relación insertada
+   */
+  insertPuntoAttributeModel: async (puntoAtributoData) => {
+      try {
+          const query = `
+              INSERT INTO puntos_atributos (id_punto, id_atributo, valor) VALUES (?, ?, ?)
+          `;
+          const values = [
+              puntoAtributoData.id_punto,
+              puntoAtributoData.id_atributo,
+              puntoAtributoData.valor
+          ];
+          console.log("valores", values);
+          const [result] = await db.query(query, values);
+          
+          return result;
+      } catch (error) {
+          console.error('Error en insertPuntoAttributeModel:', error);
+          throw error;
+      }
+  },
+
+  deleteAttributeModel: async (id_punto, id_atributo) => {
     try {
         const query = `
-            INSERT INTO puntos_atributos (id_punto, id_atributo, valor) VALUES (?, ?, ?)
+            DELETE FROM puntos_atributos WHERE id_punto = ? AND id_atributo = ?
         `;
-        const values = [
-            puntoAtributoData.id_punto,
-            puntoAtributoData.id_atributo,
-            puntoAtributoData.valor
-        ];
-        console.log("valores", values);
+        const values = [id_punto, id_atributo];
         const [result] = await db.query(query, values);
         
         return result;
@@ -365,22 +379,7 @@ insertPuntoAttributeModel: async (puntoAtributoData) => {
         console.error('Error en insertPuntoAttributeModel:', error);
         throw error;
     }
-},
-
-deleteAttributeModel: async (id_punto, id_atributo) => {
-  try {
-      const query = `
-          DELETE FROM puntos_atributos WHERE id_punto = ? AND id_atributo = ?
-      `;
-      const values = [id_punto, id_atributo];
-      const [result] = await db.query(query, values);
-      
-      return result;
-  } catch (error) {
-      console.error('Error en insertPuntoAttributeModel:', error);
-      throw error;
-  }
-},
+  },
 
 
 
@@ -398,19 +397,19 @@ deleteAttributeModel: async (id_punto, id_atributo) => {
     }
 },
 
-updateAyudaVisualReplacementModel: async (id_ayudaVisual, imagen) => {
-      
-  try {
-      // Actualizar el título en la tabla `atributos`
-      const query = "UPDATE ayudavisual SET imagen = ? WHERE id_ayudavisual = ?";
-      await db.query(query, [imagen, id_ayudaVisual]);
+  updateAyudaVisualReplacementModel: async (id_ayudaVisual, imagen) => {
+        
+    try {
+        // Actualizar el título en la tabla `atributos`
+        const query = "UPDATE ayudavisual SET imagen = ? WHERE id_ayudavisual = ?";
+        await db.query(query, [imagen, id_ayudaVisual]);
 
 
-  } catch (error) {
+    } catch (error) {
 
-      throw error;
-  }
-},
+        throw error;
+    }
+  },
   deleteImageById : async (id_ayudaVisual) => {
     // Realiza la consulta para eliminar la imagen con id_ayudaVisual del punto específico
     const query = 'DELETE FROM ayudavisual WHERE id_ayudaVisual = ?';
@@ -453,45 +452,109 @@ updateAyudaVisualReplacementModel: async (id_ayudaVisual, imagen) => {
     }
 },
 
-/* Crear un punto vacío asociado a un equipo */
-createEmptyPoint: async (id_equipo, id_categoria, orden) => {
+  /* Crear un punto vacío asociado a un equipo */
+  createEmptyPoint: async (id_equipo, id_categoria, orden) => {
+      try {
+          // Iniciar transacción
+          await db.query('START TRANSACTION');
+          
+          // Insertar el punto base
+          const [result] = await db.query(
+              'INSERT INTO puntos (id_equipo, id_categoria, orden, activo) VALUES (?, ?, ?, 1)',
+              [id_equipo, id_categoria, orden]
+          );
+          
+          const id_punto = result.insertId;
+          
+          // Confirmar transacción
+          await db.query('COMMIT');
+          
+          return id_punto;
+      } catch (error) {
+          // Revertir cambios si hay error
+          await db.query('ROLLBACK');
+          throw error;
+      }
+  },
+
+  updateConfirmation: async (id_tpm) => {
+        
     try {
-        // Iniciar transacción
-        await db.query('START TRANSACTION');
-        
-        // Insertar el punto base
-        const [result] = await db.query(
-            'INSERT INTO puntos (id_equipo, id_categoria, orden, activo) VALUES (?, ?, ?, 1)',
-            [id_equipo, id_categoria, orden]
-        );
-        
-        const id_punto = result.insertId;
-        
-        // Confirmar transacción
-        await db.query('COMMIT');
-        
-        return id_punto;
+        // Actualizar el estado de confirmación del checklist de 0 a 1
+        const query = "UPDATE checklist SET confirmacion = 1 WHERE id_checklist = ?";
+        await db.query(query, [id_tpm]); 
+
     } catch (error) {
-        // Revertir cambios si hay error
-        await db.query('ROLLBACK');
+
         throw error;
     }
-},
+  },
 
-updateConfirmation: async (id_tpm) => {
-      
-  try {
-      // Actualizar el estado de confirmación del checklist de 0 a 1
-      const query = "UPDATE checklist SET confirmacion = 1 WHERE id_checklist = ?";
-      await db.query(query, [id_tpm]); 
+  //Método para obtener los opl asociados al id_equipo
+  getOplByEquipmentId: async (id_equipo) => {
+    const query = "SELECT * FROM vista_opl_por_equipo WHERE id_equipo = ? ORDER BY fecha_completa DESC";
 
-  } catch (error) {
+    try {
+        const [results] = await db.query(query, [id_equipo]);
+        //console.log("Los equipos asociados al cuarto con id, ",roomId, "son: ",results);
+        return results;
+    } catch (err) {
+        throw err;
+    }
+  },
 
-      throw error;
-  }
-},
+  updateOplStatus: async(id_detalle_checklist, estado) =>{
 
-    
-      
+    const query = 'UPDATE opl SET status = ? WHERE id_detalle_tpm = ?';
+    try {
+      const [results] = await db.query(query, [estado, id_detalle_checklist]);
+      //console.log("Los equipos asociados al cuarto con id, ",roomId, "son: ",results);
+      return results;
+    } catch (err) {
+      throw err;
+    }
+  },
+
+  
+  getMetricasByIdCuarto: async(id_cuarto, semana) =>{
+
+    const query = `SELECT 
+        e.id_equipo,
+        e.nombre_equipo,
+        c.nombre_cuarto,
+        CASE 
+            WHEN EXISTS (
+                SELECT 1 
+                FROM checklist ch 
+                WHERE ch.id_equipo = e.id_equipo 
+                AND WEEK(ch.fecha, 1) = ?
+                AND YEAR(ch.fecha) = YEAR(CURRENT_DATE)
+                AND ch.confirmacion = 1
+            ) THEN 'Done'
+            ELSE 'Not Done'
+        END AS Estatus
+    FROM 
+        equipos e
+    JOIN 
+        cuartos c ON e.id_cuarto = c.id_cuarto
+    WHERE 
+        c.id_cuarto = ?
+        AND e.activo = 1
+    ORDER BY 
+        e.nombre_equipo;`;
+
+
+
+    try {
+      const [results] = await db.query(query, [semana, id_cuarto]);
+      //console.log("Los equipos asociados al cuarto con id, ",roomId, "son: ",results);
+      return results;
+    } catch (err) {
+      throw err;
+    }
+  },
+
 };
+
+
 module.exports = FormularioTPM;

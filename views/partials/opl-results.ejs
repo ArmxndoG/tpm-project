@@ -1,0 +1,57 @@
+<div class="opl-results">
+    <h3>OPLs para Equipo <%= id_equipo %></h3>
+    
+    <% if (error) { %>
+        <div class="alert alert-danger">
+            <%= error %>
+        </div>
+    <% } %>
+    
+    <% if (!opl || opl.length === 0) { %>
+        <div class="alert alert-info">
+            No se encontraron OPLs para este equipo.
+        </div>
+    <% } else { %>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Comentario</th>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Fotos</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% opl.forEach((item, index) => { %>
+                    <tr data-week-iso = "<%= item.semana_iso %>">
+                        <td><%= index + 1 %></td>
+                        <td><%= item.comentario || 'Sin comentario' %></td>
+                        <td><%= item.fecha_legible %></td>
+                        <td>
+                            <span>
+                                <%= item.estado_opl || 'N/A' %>
+                            </span>
+                        </td>
+                        <td>
+                            <% if (item.fotografias && item.fotografias.length > 0) { %>
+                                <% item.fotografias.forEach(function(foto) { %>
+                                    <img src="/resources/opl/<%= foto %>" width="50" height="50" alt="Foto" 
+                                          onclick="showFullImage('/resources/opl/<%= foto %>')">
+                                <% }); %>
+                            <% } else { %>
+                                <span>Sin fotos</span>
+                            <% } %>
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+    <% } %>
+</div>
+
+<script>
+    function showFullImage(src) {
+        window.open(src, '_blank');
+    }
+</script>

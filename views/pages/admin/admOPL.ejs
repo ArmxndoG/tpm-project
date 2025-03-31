@@ -1,0 +1,474 @@
+<%- include('../../layouts/header') %> <!-- Incluye el header -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Gestión de OPLs</title>
+    <link rel="stylesheet" href="/css/admOPL&Metrcs.css">
+    
+</head>
+<body>
+    <!-- Controles de selección -->
+    <div class="selection-controls">
+        <!-- Selector de cuarto -->
+        <div class="control-group">
+            <label for="cuarto-selection">Seleccione cuarto</label>
+            <select id="cuarto-selection">
+                <% if (rooms && rooms.length > 0) { %>
+                    <% rooms.forEach(room => { %>
+                        <option value="<%= room.id_cuarto %>"><%= room.nombre_cuarto %></option>
+                    <% }); %>
+                <% } else { %>
+                    <option value="">No hay cuartos disponibles</option>
+                <% } %>
+            </select>
+        </div>
+
+        <!-- Selector de equipo (se llena dinámicamente) -->
+        <div class="control-group">
+            <label for="equipo-selection">Seleccione equipo</label>
+            <select id="equipo-selection"></select>
+        </div>
+
+        <!-- Selector de semana -->
+        <div class="control-group">
+            <label for="week-selection">Filtrar por semana</label>
+            <select id="week-selection">
+                <option value="all">Todas las semanas</option>
+                <% for(let week = 1; week <= 52; week++) { %>
+                    <option value="<%= week %>"><%= week %></option>
+                <% } %>
+            </select>
+        </div>
+    </div>
+
+    <!-- Contenedor de la tabla de OPLs -->
+    <div id="opl-table-container">
+        <!-- Tabla que mostrará los datos -->
+        <table id="opl-table" class="table table-responsive">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Semana</th>
+                    <th>Estado</th>
+                    <th>Comentario</th>
+                    <th>Fotografias</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Las filas se insertarán aquí dinámicamente -->
+            </tbody>
+        </table>
+        
+        <!-- Mensaje que se muestra cuando no hay datos -->
+        <div id="opl-no-data" style="display: none;">
+            <p>No hay OPLs registrados para este equipo.</p>
+        </div>
+    </div>
+
+    <div class="export-controls">
+        <button id="export-csv-btn" class="btn btn-primary">Exportar CSV</button>
+    </div>
+
+    <script>
+        // =============================================
+        // VARIABLES GLOBALES Y CONFIGURACIÓN INICIAL
+        // =============================================
+        
+        // Datos iniciales pasados desde el servidor
+        const initialOplData = JSON.parse('<%- JSON.stringify(oplFormateados || []) %>');
+        
+        // Copia de los datos actuales que podemos modificar
+        let currentOplData = [...initialOplData];
+
+        /**
+         * Función para abrir imágenes en pantalla completa
+         * @param {string} src - Ruta de la imagen a mostrar
+         */
+        window.showFullImage = function(src) {
+            window.open(src, '_blank', 'width=800,height=600');
+        };
+
+        // =============================================
+        // INICIALIZACIÓN DE LA PÁGINA
+        // =============================================
+
+        // Cuando el documento está completamente cargado
+        document.addEventListener('DOMContentLoaded', async function() {
+
+            const exportBtn = document.getElementById('export-csv-btn');// Botón de descarga
+
+            // 1. Configurar el cuarto seleccionado por defecto
+            const defaultRoomId = document.getElementById('cuarto-selection').value;
+            
+            // 2. Cargar los equipos del cuarto seleccionado
+            await fetchAndPopulateEquipment(defaultRoomId);
+            
+            // 3. Si hay datos iniciales, mostrarlos
+            if (initialOplData?.length > 0) {
+                updateOplTable(initialOplData);
+            }
+            
+            // 4. Configurar el evento para filtrar por semana
+            document.getElementById('week-selection').addEventListener('change', function() {
+                filterOplByWeek(this.value);
+            });
+
+            if (exportBtn) {
+                exportBtn.addEventListener('click', exportToCsv);
+            }
+        });
+
+        // =============================================
+        // EVENT LISTENERS PARA LOS CONTROLES
+        // =============================================
+
+        // Cuando cambia la selección de cuarto
+        document.getElementById('cuarto-selection').addEventListener('change', async function() {
+            await fetchAndPopulateEquipment(this.value);
+        });
+
+        // Cuando cambia la selección de equipo
+        document.getElementById('equipo-selection').addEventListener('change', async function() {
+            if (this.value) {
+                await fetchOplByEquipmentId(this.value);
+            }
+        });
+
+        // =============================================
+        // FUNCIONES PRINCIPALES
+        // =============================================
+
+        /**
+         * Obtiene y muestra los equipos disponibles para un cuarto específico
+         * @param {string} roomId - ID del cuarto seleccionado
+         */
+        async function fetchAndPopulateEquipment(roomId) {
+            const equipmentSelect = document.getElementById('equipo-selection');
+            
+            try {
+                // 1. Limpiar el selector de equipos
+                equipmentSelect.innerHTML = '';
+                
+                // 2. Obtener los equipos del cuarto desde el servidor
+                const response = await fetch(`/tpm/rooms/${roomId}/equipment`);
+                if (!response.ok) throw new Error('Error al obtener equipos');
+                
+                const equipmentList = await response.json();
+                
+                // 3. Si hay equipos, llenar el selector
+                if (equipmentList.length > 0) {
+                    equipmentList.forEach(equipo => {
+                        const option = document.createElement('option');
+                        option.value = equipo.id_equipo;
+                        option.textContent = equipo.nombre_equipo;
+                        equipmentSelect.appendChild(option);
+                    });
+                    
+                    // 4. Cargar automáticamente los OPLs del primer equipo
+                    await fetchOplByEquipmentId(equipmentList[0].id_equipo);
+                } else {
+                    // Mostrar mensaje si no hay equipos
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No hay equipos disponibles';
+                    equipmentSelect.appendChild(option);
+                    clearOplTable();
+                }
+            } catch (error) {
+                console.error('Error al cargar equipos:', error);
+                clearOplTable();
+            }
+        }
+
+        /**
+         * Obtiene los OPLs para un equipo específico
+         * @param {string} equipmentId - ID del equipo seleccionado
+         */
+        async function fetchOplByEquipmentId(equipmentId) {
+            try {
+                // 1. Hacer la petición al servidor
+                const response = await fetch(`/tpm/admOPL/${equipmentId}`);
+                if (!response.ok) throw new Error('Error al obtener OPLs');
+                
+                // 2. Procesar la respuesta
+                const result = await response.json();
+                currentOplData = result.oplFormateados || [];
+                
+                // 3. Asegurarse que la tabla existe
+                if (!document.getElementById('opl-table')) {
+                    initializeTableStructure();
+                }
+                
+                // 4. Actualizar la tabla con los nuevos datos
+                updateOplTable(currentOplData);
+                
+                // 5. Resetear el filtro de semana
+                document.getElementById('week-selection').value = 'all';
+                
+            } catch (error) {
+                console.error('Error al cargar OPLs:', error);
+                clearOplTable();
+            }
+        }
+
+        /**
+         * Filtra los OPLs por número de semana
+         * @param {string|number} week - Semana a filtrar ('all' para todas)
+         */
+        function filterOplByWeek(week) {
+            // 1. Si es 'all', mostrar todos los datos sin filtrar
+            if (week === 'all') {
+                updateOplTable(currentOplData);
+                return;
+            }
+            
+            // 2. Convertir a número y filtrar
+            const weekNumber = parseInt(week, 10);
+            const filteredData = currentOplData.filter(opl => {
+                return parseInt(opl.semana_iso, 10) === weekNumber;
+            });
+            
+            // 3. Mostrar resultados (asegurando que sea un array)
+            updateOplTable(Array.isArray(filteredData) ? filteredData : [filteredData]);
+        }
+        /**
+         * Maneja el cambio de estado de un OPL
+         * @param {string} checklistId - ID del checklist a modificar
+         * @param {string} newStatus - Nuevo estado ('abierto' o 'cerrado')
+         */
+         async function updateOplStatus(checklistId, newStatus) {
+
+            try {
+                console.log(`Actualizando estado: ID=${checklistId}, Estado=${newStatus}`);
+                
+                // 1. Enviar la actualización al servidor
+                const response = await fetch('/tpm/admOPL/updateOplStatus', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        id_detalle_checklist: checklistId,
+                        estado: newStatus
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Error response:', response.status, response.statusText);
+                    console.error('Error body:', errorText);
+                    throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+                }
+                
+                const result = await response.json();
+                console.log('Respuesta del servidor:', result);
+                
+                // 2. Actualizar los datos locales
+                const updatedData = currentOplData.map(opl => {
+                    if (opl.id_detalle == checklistId) {
+                        return { ...opl, estado_opl: newStatus };
+                    }
+                    return opl;
+                });
+                
+                currentOplData = updatedData;
+                
+                // 3. Actualizar la visualización
+                updateOplTable(currentOplData);
+                
+                // 4. Mostrar notificación de éxito
+                alert('Estado actualizado correctamente');
+                
+            } catch (error) {
+                console.error('Error al actualizar estado:', error);
+                alert('Error al actualizar el estado');
+                
+                // Revertir el cambio visual
+                const statusSelect = document.querySelector(`.status-select[data-id="${checklistId}"]`);
+                if (statusSelect) {
+                    // Encuentra el estado original
+                    const originalOpl = currentOplData.find(opl => opl.id_detalle == checklistId);
+                    if (originalOpl) {
+                        statusSelect.value = originalOpl.estado_opl;
+                    }
+                }
+            }
+        }
+
+        // =============================================
+        // FUNCIONES DE MANEJO DE LA TABLA
+        // =============================================
+
+        /**
+         * Crea la estructura de la tabla si no existe
+         */
+        function initializeTableStructure() {
+            const container = document.getElementById('opl-table-container');
+            if (!container) return;
+            
+            container.innerHTML = `
+                <table id="opl-table" class="table table-responsive">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Semana</th>
+                            <th>Estado</th>
+                            <th>Comentario</th>
+                            <th>Fotografías</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <div id="opl-no-data" style="display: none;">
+                    <p>No hay OPLs registrados para este equipo.</p>
+                </div>
+            `;
+        }
+
+        /**
+         * Actualiza la tabla con los datos proporcionados
+         * @param {Array} data - Datos a mostrar en la tabla
+         */
+         function updateOplTable(data) {
+            // 1. Obtener referencias a los elementos
+            const table = document.getElementById('opl-table');
+            const noDataMessage = document.getElementById('opl-no-data');
+            const tableBody = document.querySelector('#opl-table tbody');
+            
+            // 2. Verificar que los elementos existen
+            if (!table || !noDataMessage || !tableBody) {
+                console.error('Elementos de la tabla no encontrados');
+                return;
+            }
+            
+            // 3. Asegurar que los datos son un array
+            const displayData = Array.isArray(data) ? data : [data];
+            
+            // 4. Mostrar mensaje si no hay datos
+            if (displayData.length === 0 || !displayData[0]) {
+                table.style.display = 'none';
+                noDataMessage.style.display = 'block';
+                return;
+            }
+            
+            // 5. Mostrar tabla y ocultar mensaje
+            table.style.display = 'table';
+            noDataMessage.style.display = 'none';
+            
+            // 6. Limpiar tabla
+            tableBody.innerHTML = '';
+            
+            // 7. Llenar tabla con los datos
+            displayData.forEach(opl => {
+                if (!opl) return; // Saltar si no hay datos
+                
+                const row = document.createElement('tr');
+                row.setAttribute('data-week', opl.semana_iso);
+                
+                // Crear celdas con los datos del OPL
+                row.innerHTML = `
+                    <td>${opl.fecha_legible || 'Fecha no disponible'}</td>
+                    <td>${opl.semana_iso || 'N/A'}</td>
+                    <td>
+                        <select class="status-select" data-id="${opl.id_detalle}">
+                            <option value="abierto" ${opl.estado_opl === 'abierto' ? 'selected' : ''}>Abierto</option>
+                            <option value="cerrado" ${opl.estado_opl === 'cerrado' ? 'selected' : ''}>Cerrado</option>
+                        </select>
+                    </td>
+                    <td>${opl.comentario || 'Sin comentarios'}</td>
+                    <td>
+
+                        ${opl.fotografias?.length > 0 ? 
+                            opl.fotografias.map(foto => `
+                                <img src="/resources/opl/${foto}" 
+                                    class="img-thumbnail"
+                                    onclick="showFullImage('/resources/opl/${foto}')"
+                                    style="max-width: 100px; cursor: pointer;">
+                            `).join('') : 'Sin fotografías'}
+                    </td>
+                `;
+                row.querySelector('.status-select').addEventListener('change', function() {
+                    updateOplStatus(this.getAttribute('data-id'), this.value);
+                });
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+                
+
+        /**
+         * Limpia la tabla y muestra mensaje de no hay datos
+         */
+        function clearOplTable() {
+            const table = document.getElementById('opl-table');
+            const noDataMessage = document.getElementById('opl-no-data');
+            
+            if (table && noDataMessage) {
+                table.style.display = 'none';
+                noDataMessage.style.display = 'block';
+            }
+            currentOplData = [];
+        }
+
+        function exportToCsv() {
+            // 1. Obtener la tabla y los encabezados dinámicamente
+            const table = document.getElementById('opl-table');
+            const headers = Array.from(table.querySelectorAll('thead th'))
+                .map(th => th.textContent.trim());
+            
+            // 2. Obtener los datos visibles actuales
+            const tableBody = table.querySelector('tbody');
+            const rows = tableBody.querySelectorAll('tr');
+            
+            // 3. Recopilar datos de manera dinámica
+            const csvData = [headers];
+            
+            rows.forEach(row => {
+                const rowData = Array.from(row.querySelectorAll('td')).map(cell => {
+                    // Manejo especial para celdas con select
+                    if (cell.querySelector('select')) {
+                        return cell.querySelector('select').value;
+                    }
+                    
+                    // Manejo especial para celdas con imágenes
+                    if (cell.querySelectorAll('img').length > 0) {
+                        return cell.querySelectorAll('img').length + ' foto(s)';
+                    }
+                    
+                    // Para celdas de texto normales
+                    return cell.textContent.trim();
+                });
+                
+                csvData.push(rowData);
+            });
+            
+            // 4. Convertir a string CSV con codificación UTF-8
+            const csvContent = csvData.map(row => 
+                row.map(cell => 
+                    `"${cell.replace(/"/g, '""')}"` // Escape de comillas dobles
+                ).join(",")
+            ).join("\n");
+            
+            // 5. Crear y descargar el archivo con codificación UTF-8
+            const blob = new Blob(['\ufeff' + csvContent], { 
+                type: 'text/csv;charset=utf-8;' 
+            });
+            
+            const link = document.createElement("a");
+            const url = URL.createObjectURL(blob);
+            
+            link.setAttribute("href", url);
+            link.setAttribute("download", `opls_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        
+    </script>
+  </body>
+</html>

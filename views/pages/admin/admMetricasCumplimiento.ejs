@@ -1,0 +1,184 @@
+<%- include('../../layouts/header') %> <!-- Incluye el header -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Metricas de cumplimiento</title>
+    <link rel="stylesheet" href="/css/admOPL&Metrcs.css">
+</head>
+<body>
+    <!-- Controles de selección -->
+    <div class="selection-controls">
+        <!-- Selector de cuarto -->
+        <div class="control-group">
+            <label for="cuarto-selection">Seleccione cuarto</label>
+            <select id="cuarto-selection">
+                
+            </select>
+        </div>
+
+
+        <!-- Selector de semana -->
+        <div class="control-group">
+            <label for="week-selection">Filtrar por semana</label>
+            <select id="week-selection">
+                <% for(let week = 1; week <= 52; week++) { %>
+                    <option value="<%= week %>"><%= week %></option>
+                <% } %>
+            </select>
+        </div>
+    </div>
+    
+
+
+    <div class="export-controls">
+        <button id="export-csv-btn" class="btn btn-primary">Exportar CSV</button>
+    </div>
+
+    <!-- Contenedor para la tabla de métricas -->
+    <div id="tabla-metricas-container"></div>
+
+    <script>
+        // Seleccionar elementos del DOM
+        const selectorCuarto = document.getElementById('cuarto-selection');
+        const selectorSemana = document.getElementById('week-selection');
+        const botonExportar = document.getElementById('export-csv-btn');
+        const contenedorTabla = document.getElementById('tabla-metricas-container');
+
+        // Función para cargar cuartos desde la API
+        function cargarCuartos() {
+            // Hacer solicitud a la API para obtener cuartos
+            fetch('/tpm/api/getRooms')
+                .then(respuesta => respuesta.json())
+                .then(cuartos => {
+                    // Limpiar selector actual
+                    selectorCuarto.innerHTML = '';
+
+                    // Añadir cada cuarto como opción
+                    cuartos.forEach(cuarto => {
+                        const opcion = document.createElement('option');
+                        opcion.value = cuarto.id_cuarto;
+                        opcion.textContent = cuarto.nombre_cuarto;
+                        selectorCuarto.appendChild(opcion);
+                    });
+
+                    // Cargar métricas del primer cuarto
+                    if (cuartos.length > 0) {
+                        cargarMetricas();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar cuartos:', error);
+                    alert('No se pudieron cargar los cuartos');
+                });
+        }
+
+        // Función para cargar métricas
+        function cargarMetricas() {
+            // Obtener cuarto y semana seleccionados
+            const cuartoId = selectorCuarto.value;
+            const semana = selectorSemana.value;
+
+            // Verificar que se haya seleccionado un cuarto
+            if (!cuartoId) {
+                alert('Seleccione un cuarto');
+                return;
+            }
+
+            // Solicitar métricas a la API
+            fetch(`/tpm/admMetricasCumplimiento/${cuartoId}/${semana}`)
+                .then(respuesta => respuesta.json())
+                .then(metricas => {
+                    // Construir tabla de métricas
+                    const tabla = crearTablaMetricas(metricas);
+                    
+                    // Mostrar tabla
+                    contenedorTabla.innerHTML = '';
+                    contenedorTabla.appendChild(tabla);
+                })
+                .catch(error => {
+                    console.error('Error al cargar métricas:', error);
+                    alert('No se pudieron cargar las métricas');
+                });
+        }
+
+        // Función para crear tabla de métricas
+        function crearTablaMetricas(metricas) {
+            // Crear elemento tabla
+            const tabla = document.createElement('table');
+            tabla.id = 'metricas-table'; // Asegurar el ID correcto
+            tabla.className = 'table-responsive'; // Añadir clase adicional
+            
+            // Crear encabezado
+            const encabezado = `
+                <thead>
+                    <tr>
+                        <th>Equipo</th>
+                        <th>Estatus</th>
+                    </tr>
+                </thead>
+            `;
+            
+            // Crear filas de datos
+            const cuerpo = metricas.map(metrica => `
+                <tr>
+                    <td class="equipo-cell">${metrica.nombre_equipo}</td>
+                    <td class="status-cell ${metrica.Estatus === 'Done' ? 'status-done' : 'status-not-done'}">
+                        ${metrica.Estatus}
+                    </td>
+                </tr>
+            `).join('');
+
+            // Insertar HTML en la tabla
+            tabla.innerHTML = encabezado + `<tbody>${cuerpo}</tbody>`;
+            
+            return tabla;
+        }
+        
+
+        // Función para exportar a CSV
+        function exportarCSV() {
+            // Obtener tabla actual
+            const tabla = contenedorTabla.querySelector('table');
+            if (!tabla) {
+                alert('No hay datos para exportar');
+                return;
+            }
+
+            // Obtener información de cuarto y semana
+            const cuarto = selectorCuarto.options[selectorCuarto.selectedIndex].text;
+            const semana = selectorSemana.value;
+
+            // Convertir tabla a datos CSV
+            const filas = Array.from(tabla.querySelectorAll('tr'));
+            const datosCSV = filas.map(fila => 
+                Array.from(fila.querySelectorAll('td, th'))
+                    .map(celda => `"${celda.textContent.trim()}"`)
+                    .join(',')
+            ).join('\n');
+
+            // Generar y descargar archivo CSV
+            const csvCompleto = `Cuarto,${cuarto}\nSemana,${semana}\n\n${datosCSV}`;
+            const blob = new Blob([csvCompleto], { type: 'text/csv;charset=utf-8;' });
+            const enlace = document.createElement('a');
+            
+            enlace.href = URL.createObjectURL(blob);
+            enlace.download = `metricas_${cuarto}_semana_${semana}.csv`;
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+        }
+
+        // Configurar eventos
+        selectorCuarto.addEventListener('change', cargarMetricas);
+        selectorSemana.addEventListener('change', cargarMetricas);
+        botonExportar.addEventListener('click', exportarCSV);
+
+        // Iniciar carga de cuartos al cargar página
+        document.addEventListener('DOMContentLoaded', cargarCuartos);
+    </script>
+
+  
+  </body>
+</html>

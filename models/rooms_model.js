@@ -39,7 +39,7 @@ const Room = {
     },
     //Método para obtener el cuarto asociado al id del equipo
     getRoomByEquipmentId: async (equipoId) => {
-        const query = "SELECT * FROM vista_equipos_cuartos WHERE id_equipo = ?";
+        const query = "SELECT * FROM vista_equipos_cuartos WHERE id_equipo = ? AND activo = 1";
         try {
             const [results] = await db.query(query, [equipoId]);
             console.log("El cuarto asociado al equipo",equipoId," es: ",results);

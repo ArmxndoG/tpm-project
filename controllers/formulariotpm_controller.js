@@ -1,5 +1,6 @@
 
 const puntostpmModel = require('../models/formulariotpm_model');
+const Room = require('../models/rooms_model');
 const fs = require('fs');
 const path = require('path');
 
@@ -8,15 +9,15 @@ const mostrarPuntosTPM = async (req, res, viewName) => {
 
     try {
         // Verificar si ya existe un checklist para este equipo en la semana actual
-        const checklistExistente = await puntostpmModel.hasChecklistThisWeek(id_equipo);
+        //const checklistExistente = await puntostpmModel.hasChecklistThisWeek(id_equipo);
         
-        if (checklistExistente) {
+        /*if (checklistExistente) {
             // Si ya existe un checklist, devolver una respuesta JSON indicando el error
             return res.status(409).json({ 
                 error: true, 
                 message: 'Ya se ha realizado el TPM de este equipo esta semana.'
             });
-        }
+        }*/
         const atributos = await puntostpmModel.getAtributos(id_equipo);
         const ayuda_visual = await puntostpmModel.getAyudaVisual(id_equipo);
         const orden_puntos = await puntostpmModel.getOrdenPuntos(id_equipo);
@@ -273,7 +274,7 @@ const replaceImgHeader = async (req, res) => {
     try {
         const { id_equipo } = req.body;
         const file = req.files[0];
-        const BASE_RESOURCE_PATH = 'C:\\Users\\GHH1SLP\\Desktop\\tpm-server-resources';
+        const BASE_RESOURCE_PATH = 'C:\\Users\\arman\\Desktop\\tpm-server-resources';
 
         if (!file) {
             return res.status(400).json({ success: false, message: 'No se subió ningún archivo' });
@@ -473,8 +474,186 @@ const subirDatosTPM = async (req, res) => {
   };
 
 
+/*const getOplByEquipmentId = async (req, res) => {
+    const { id_equipo } = req.params;
+    try {
+        console.log(`Buscando OPLs para equipo: ${id_equipo}`); // Debug
+        const opl = await puntostpmModel.getOplByEquipmentId(id_equipo);
+        
+        console.log(`Datos crudos recibidos del modelo:`, opl); // Debug
+        
+        if (!opl || !Array.isArray(opl)) {
+            console.error('Los datos recibidos no son un array:', opl);
+            return res.status(404).render('partials/opl-results', { 
+                opl: [], 
+                id_equipo,
+                error: 'Datos no válidos recibidos del servidor'
+            });
+        }
 
-  
+        const oplFormateados = opl.map(item => ({
+            ...item,
+            fotografias: item.fotografias && item.fotografias.trim() !== '' ? 
+                        item.fotografias.split('|') : 
+                        [],
+            fecha_legible: item.fecha_completa ? new Date(item.fecha_completa).toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) : 'Fecha no disponible',
+            estado_clase: item.estado_opl === 'abierto' ? 'badge-danger' : 'badge-success'
+        }));
+
+        console.log("OPLs formateados:", oplFormateados); // Debug
+        
+        res.render('partials/opl-results', { 
+            opl: oplFormateados, 
+            id_equipo: id_equipo,
+            error: null
+        });
+    } catch (err) {
+        console.error("Error detallado al obtener OPLs:", {
+            message: err.message,
+            stack: err.stack,
+            requestParams: req.params
+        });
+        res.status(500).render('partials/opl-results', { 
+            opl: [], 
+            id_equipo,
+            error: `Error al cargar OPLs: ${err.message}`
+        });
+    }
+};*/
+
+/*const getOplByEquipmentId = async (req, res) => {
+    const { id_equipo } = req.params;
+    try {
+        console.log(`Buscando OPLs para equipo: ${id_equipo}`); // Debug
+        const rooms = await Room.getAllRooms();
+        const opl = await puntostpmModel.getOplByEquipmentId(id_equipo);
+        
+        
+        console.log(`Datos crudos recibidos del modelo:`, opl); // Debug
+        
+        if (!opl || !Array.isArray(opl)) {
+            console.error('Los datos recibidos no son un array:', opl);
+        }
+
+        const oplFormateados = opl.map(item => ({
+            ...item,
+            fotografias: item.fotografias && item.fotografias.trim() !== '' ? 
+                        item.fotografias.split('|') : 
+                        [],
+            fecha_legible: item.fecha_completa ? new Date(item.fecha_completa).toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) : 'Fecha no disponible',
+            estado_clase: item.estado_opl === 'abierto' ? 'badge-danger' : 'badge-success'
+        }));
+
+        console.log("OPLs formateados:", oplFormateados); // Debug
+
+        res.render('pages/admin/admOPL', {oplFormateados, rooms})
+        
+       
+    } catch (err) {
+        console.error("Error detallado al obtener OPLs: ",err);
+        res.status(500)
+    }
+}*/
+const getOplByEquipmentId = async (req, res) => {
+    const { id_equipo } = req.params;
+    try {
+        const opl = await puntostpmModel.getOplByEquipmentId(id_equipo);
+        
+        if (!opl || !Array.isArray(opl)) {
+            return res.status(404).json({ 
+                oplFormateados: [], 
+                error: 'Datos no válidos'
+            });
+        }
+
+        const oplFormateados = opl.map(item => ({
+            ...item,
+            fotografias: item.fotografias && item.fotografias.trim() !== '' ? 
+                        item.fotografias.split('|') : [],
+            fecha_legible: item.fecha_completa ? new Date(item.fecha_completa).toLocaleDateString('es-MX', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }) : 'Fecha no disponible',
+            estado_clase: item.estado_opl === 'abierto' ? 'badge-danger' : 'badge-success',
+            semana_iso: Number(item.semana_iso) // Asegurar que es número
+        }));
+        console.log("Opl`s asociados al equipo: ",oplFormateados);
+
+        res.json({ oplFormateados }); // Enviar como JSON
+        
+    } catch (err) {
+        console.error("Error:", err);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+}
+
+const updateOplStatusById = async (req, res) => {
+    console.log('Datos recibidos en updateOplStatusById:', req.body);
+    
+    const { id_detalle_checklist, estado } = req.body;
+    
+    // Log de los datos específicos
+    console.log('id_checklist:', id_detalle_checklist);
+    console.log('estado:', estado);
+    
+    try {
+        // Validar que los datos existan
+        if (!id_detalle_checklist) {
+            console.log('Falta id_checklist');
+            return res.status(400).json({ error: 'ID de checklist es requerido' });
+        }
+        
+        // Validar que el estado sea uno de los permitidos
+        if (!['abierto', 'cerrado'].includes(estado)) {
+            console.log('Estado no válido:', estado);
+            return res.status(400).json({ error: 'Estado no válido' });
+        }
+        
+        // Actualizar en la base de datos
+        await puntostpmModel.updateOplStatus(id_detalle_checklist, estado);
+    
+        res.json({ success: true, message: 'OPL actualizado correctamente' });
+        
+    } catch (error) {
+        console.error('Error completo al actualizar estado:', error);
+        res.status(500).json({ 
+            error: 'Error del servidor', 
+            details: error.message 
+        });
+    }
+}
+
+
+const getMetricasCumplimiento = async (req, res) => {
+    const { id_cuarto, semana } = req.params;
+
+    console.log("id_cuarto: ",id_cuarto)
+    console.log("Semana: ",semana);
+
+    try {
+        const metricas = await puntostpmModel.getMetricasByIdCuarto(id_cuarto, semana);
+        console.log("Metricas: ",metricas);
+        res.json(metricas);
+    } catch (err) {
+        console.error("Error:", err);
+        res.status(500).json({ error: 'Error del servidor' });
+    }
+}
 
 
 //Aquí se exportan directamente los métodos necesarios del controlador
@@ -489,6 +668,9 @@ module.exports = {
     addImgHeader,
     replaceImgHeader,
     addEmptyPoint,
-    verifyChecklist
+    verifyChecklist,
+    getOplByEquipmentId,
+    updateOplStatusById,
+    getMetricasCumplimiento
 
 };
